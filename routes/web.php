@@ -10,6 +10,37 @@ use App\Controllers\EquipmentController;
 /** @var App\Core\Router $router */
 
 // ============================================
+// TEST TEMPORAIRE — À SUPPRIMER APRÈS VALIDATION
+// ============================================
+$router->get('/test-audit', function (Request $request) {
+    $audit = new \App\Services\Audit\AuditService();
+
+    // Test 1 : création
+    $audit->logCreate('equipment', 999, [
+        'inventory_number' => 'INF-TEST-AUDIT',
+        'designation'      => 'Test audit — création',
+        'status_id'        => 1,
+    ]);
+
+    // Test 2 : modification
+    $audit->logUpdate(
+        'equipment',
+        999,
+        ['designation' => 'Ancien nom', 'status_id' => 1],
+        ['designation' => 'Nouveau nom', 'status_id' => 2]
+    );
+
+    // Test 3 : suppression
+    $audit->logDelete('equipment', 999, ['designation' => 'Nouveau nom']);
+
+    return Response::html(
+        '<h1>✅ Tests Audit OK</h1>' .
+        '<p>3 entrées ont été insérées dans <code>audit_logs</code>.</p>' .
+        '<p><a href="' . url('equipment') . '">Retour aux équipements</a></p>'
+    );
+});
+
+// ============================================
 // PAGE D'ACCUEIL — Redirection intelligente
 // ============================================
 $router->get('/', function (Request $request) {
@@ -57,7 +88,7 @@ $router->post('/equipment/bulk/delete',       [EquipmentController::class, 'bulk
 $router->get('/equipment/bulk/export',        [EquipmentController::class, 'bulkExportCsv']);
 
 // ============================================
-// IMPORT CSV  ← NOUVEAU
+// IMPORT CSV
 // ============================================
 // IMPORTANT : ces routes doivent être AVANT /equipment/{id}
 $router->get('/equipment/import',             [EquipmentController::class, 'importForm']);

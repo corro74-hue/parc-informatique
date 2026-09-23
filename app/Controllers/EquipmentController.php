@@ -11,16 +11,19 @@ use App\Middleware\AuthMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Repositories\MySql\EquipmentRepository;
 use App\Services\Equipment\EquipmentService;
+use App\Services\Audit\AuditService;
 
 final class EquipmentController extends Controller
 {
     private EquipmentService $service;
     private EquipmentRepository $repo;
+    private AuditService $audit;
 
     public function __construct()
     {
         $this->service = new EquipmentService();
         $this->repo    = new EquipmentRepository();
+        $this->audit   = new AuditService();
     }
 
     // ============================================
@@ -106,6 +109,17 @@ final class EquipmentController extends Controller
         try {
             $equipment = $this->service->create($data, $userId);
 
+            // ---- AUDIT : création ----
+            $this->audit->logCreate('equipment', $equipment->id, [
+                'inventory_number'  => $equipment->inventoryNumber,
+                'designation'       => $equipment->designation,
+                'category_id'       => $equipment->categoryId,
+                'brand_id'          => $equipment->brandId,
+                'status_id'         => $equipment->statusId,
+                'serial_number'     => $equipment->serialNumber,
+                'acquisition_value' => $equipment->acquisitionValue,
+            ]);
+
             flash('success', "Équipement {$equipment->inventoryNumber} créé avec succès.");
             return $this->redirect(url('equipment'));
 
@@ -168,11 +182,48 @@ final class EquipmentController extends Controller
         if ($r = (new AuthMiddleware())->handle()) return $r;
         if ($r = (new CsrfMiddleware())->handle()) return $r;
 
+        // Récupérer l'état AVANT modification (pour l'audit)
+        $oldEquipment = $this->service->find((int) $id);
+
         $data = $this->extractFormData($request);
         $userId = (int) ($_SESSION['user_id'] ?? 0);
 
         try {
             $equipment = $this->service->update((int) $id, $data, $userId);
+
+            // ---- AUDIT : modification ----
+            if ($oldEquipment) {
+                $this->audit->logUpdate(
+                    'equipment',
+                    $equipment->id,
+                    [
+                        'designation'       => $oldEquipment->designation,
+                        'category_id'       => $oldEquipment->categoryId,
+                        'brand_id'          => $oldEquipment->brandId,
+                        'model_text'        => $oldEquipment->modelText,
+                        'serial_number'     => $oldEquipment->serialNumber,
+                        'status_id'         => $oldEquipment->statusId,
+                        'service_id'        => $oldEquipment->serviceId,
+                        'site_id'           => $oldEquipment->siteId,
+                        'acquisition_date'  => $oldEquipment->acquisitionDate,
+                        'acquisition_value' => $oldEquipment->acquisitionValue,
+                        'warranty_end_date' => $oldEquipment->warrantyEndDate,
+                    ],
+                    [
+                        'designation'       => $equipment->designation,
+                        'category_id'       => $equipment->categoryId,
+                        'brand_id'          => $equipment->brandId,
+                        'model_text'        => $equipment->modelText,
+                        'serial_number'     => $equipment->serialNumber,
+                        'status_id'         => $equipment->statusId,
+                        'service_id'        => $equipment->serviceId,
+                        'site_id'           => $equipment->siteId,
+                        'acquisition_date'  => $equipment->acquisitionDate,
+                        'acquisition_value' => $equipment->acquisitionValue,
+                        'warranty_end_date' => $equipment->warrantyEndDate,
+                    ]
+                );
+            }
 
             flash('success', "Équipement {$equipment->inventoryNumber} mis à jour.");
             return $this->redirect(url('equipment/' . $id));
@@ -205,6 +256,14 @@ final class EquipmentController extends Controller
         }
 
         $this->service->delete((int) $id, $userId);
+
+        // ---- AUDIT : suppression (corbeille) ----
+        $this->audit->logDelete('equipment', (int) $id, [
+            'inventory_number' => $equipment->inventoryNumber,
+            'designation'      => $equipment->designation,
+            'status_id'        => $equipment->statusId,
+        ]);
+
         flash('success', "Équipement {$equipment->inventoryNumber} supprimé.");
 
         return $this->redirect(url('equipment'));
@@ -240,6 +299,11 @@ final class EquipmentController extends Controller
         $success = $this->repo->restore((int) $id);
 
         if ($success) {
+            // ---- AUDIT : restauration ----
+            $this->audit->logRestore('equipment', (int) $id, [
+                'restored_at' => date('Y-m-d H:i:s'),
+            ]);
+
             flash('success', 'Équipement restauré avec succès.');
         } else {
             flash('error', 'Impossible de restaurer cet équipement.');
@@ -254,7 +318,7 @@ final class EquipmentController extends Controller
         if ($r = (new CsrfMiddleware())->handle()) return $r;
 
         $stmt = \App\Core\Database::getInstance()->prepare(
-            'SELECT id, inventory_number FROM equipment WHERE id = :id AND deleted_at IS NOT NULL'
+            'SELECT id, inventory_number, designation FROM equipment WHERE id = :id AND deleted_at IS NOT NULL'
         );
         $stmt->execute(['id' => (int) $id]);
         $trashed = $stmt->fetch();
@@ -267,6 +331,19 @@ final class EquipmentController extends Controller
         $success = $this->repo->forceDelete((int) $id);
 
         if ($success) {
+            // ---- AUDIT : suppression définitive (CRITIQUE) ----
+            $this->audit->log(
+                'force_delete',
+                'equipment',
+                (int) $id,
+                [
+                    'inventory_number' => $trashed['inventory_number'],
+                    'designation'      => $trashed['designation'],
+                ],
+                null,
+                'critical'
+            );
+
             flash('success', "Équipement {$trashed['inventory_number']} supprimé définitivement.");
         } else {
             flash('error', 'Impossible de supprimer définitivement cet équipement.');
@@ -848,6 +925,9 @@ final class EquipmentController extends Controller
             ], 404);
         }
 
+        $oldStatusId   = $equipment->statusId;
+        $oldStatusName = $equipment->statusName;
+
         // ----- 6. Mise à jour -----
         $userId = (int) ($_SESSION['user_id'] ?? 0);
         $ok     = $this->repo->updateStatus((int) $id, $statusId, $userId);
@@ -857,6 +937,18 @@ final class EquipmentController extends Controller
                 'success' => false,
                 'message' => 'Erreur lors de la mise à jour.',
             ], 500);
+        }
+
+        // ---- AUDIT : changement de statut (si différent) ----
+        if ($oldStatusId !== $statusId) {
+            $this->audit->log(
+                'status_change',
+                'equipment',
+                (int) $id,
+                ['status_id' => $oldStatusId, 'status_name' => $oldStatusName],
+                ['status_id' => (int) $status['id'], 'status_name' => $status['name']],
+                'info'
+            );
         }
 
         // ----- 7. Réponse succès -----
@@ -968,6 +1060,20 @@ final class EquipmentController extends Controller
         $userId = (int) ($_SESSION['user_id'] ?? 0);
         $count  = $this->repo->bulkUpdateStatus($ids, $statusId, $userId);
 
+        // ---- AUDIT : changement de statut en masse ----
+        $this->audit->log(
+            'bulk_status_change',
+            'equipment',
+            null,
+            null,
+            [
+                'ids_count'   => count($ids),
+                'status_id'   => (int) $status['id'],
+                'status_name' => $status['name'],
+            ],
+            'info'
+        );
+
         return Response::json([
             'success'      => true,
             'message'      => $count . ' équipement(s) mis à jour.',
@@ -1001,6 +1107,19 @@ final class EquipmentController extends Controller
 
         $userId = (int) ($_SESSION['user_id'] ?? 0);
         $count  = $this->repo->bulkSoftDelete($ids, $userId);
+
+        // ---- AUDIT : suppression en masse ----
+        $this->audit->log(
+            'bulk_delete',
+            'equipment',
+            null,
+            null,
+            [
+                'ids_count' => count($ids),
+                'ids'       => array_slice($ids, 0, 50), // max 50 pour éviter un JSON énorme
+            ],
+            'warning'
+        );
 
         return Response::json([
             'success' => true,
@@ -1071,7 +1190,7 @@ final class EquipmentController extends Controller
     }
 
     // ============================================
-    // IMPORT CSV  ← NOUVEAU
+    // IMPORT CSV
     // ============================================
 
     /**
@@ -1192,6 +1311,21 @@ final class EquipmentController extends Controller
             flash('error', 'Erreur lors de l\'insertion : ' . $e->getMessage());
             return $this->redirect(url('equipment/import'));
         }
+
+        // ---- AUDIT : import CSV ----
+        $this->audit->log(
+            'import',
+            'equipment',
+            null,
+            null,
+            [
+                'inserted'   => $inserted,
+                'errors'     => count($analysis['report']['errors']),
+                'total_rows' => $analysis['report']['total'],
+                'filename'   => basename($path),
+            ],
+            'info'
+        );
 
         // ----- Nettoyer -----
         @unlink($path);
