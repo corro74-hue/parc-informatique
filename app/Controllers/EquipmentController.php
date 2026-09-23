@@ -870,7 +870,7 @@ final class EquipmentController extends Controller
     }
 
     // ============================================
-    // RECHERCHE GLOBALE (AJAX)  ← NOUVEAU
+    // RECHERCHE GLOBALE (AJAX)
     // ============================================
     /**
      * Recherche rapide pour la barre de recherche du header.
@@ -922,6 +922,155 @@ final class EquipmentController extends Controller
     }
 
     // ============================================
+    // ACTIONS GROUPÉES (BULK - AJAX)  ← NOUVEAU
+    // ============================================
+
+    /**
+     * Change le statut de PLUSIEURS équipements.
+     */
+    public function bulkUpdateStatus(Request $request): Response
+    {
+        // Auth
+        $authService = new \App\Services\Auth\AuthService();
+        if (!$authService->check()) {
+            return Response::json(['success' => false, 'message' => 'Non authentifié.'], 401);
+        }
+
+        // CSRF
+        if (!\App\Core\Csrf::verify($_POST['_token'] ?? null)) {
+            return Response::json(['success' => false, 'message' => 'Jeton CSRF invalide.'], 403);
+        }
+
+        // Récupérer les IDs (envoyés en JSON ou POST classique)
+        $ids = $this->extractBulkIds($request);
+        if (empty($ids)) {
+            return Response::json(['success' => false, 'message' => 'Aucun équipement sélectionné.'], 422);
+        }
+
+        // Statut
+        $statusId = (int) $request->input('status_id', 0);
+        if ($statusId <= 0) {
+            return Response::json(['success' => false, 'message' => 'Statut invalide.'], 422);
+        }
+
+        // Vérifier le statut en base
+        $stmt = \App\Core\Database::getInstance()->prepare(
+            'SELECT id, name, color FROM equipment_statuses WHERE id = :id'
+        );
+        $stmt->execute(['id' => $statusId]);
+        $status = $stmt->fetch();
+
+        if (!$status) {
+            return Response::json(['success' => false, 'message' => 'Statut introuvable.'], 422);
+        }
+
+        // Mettre à jour
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        $count  = $this->repo->bulkUpdateStatus($ids, $statusId, $userId);
+
+        return Response::json([
+            'success'      => true,
+            'message'      => $count . ' équipement(s) mis à jour.',
+            'count'        => $count,
+            'status_id'    => (int) $status['id'],
+            'status_name'  => $status['name'],
+            'status_color' => $status['color'],
+        ]);
+    }
+
+    /**
+     * Met à la corbeille PLUSIEURS équipements.
+     */
+    public function bulkDelete(Request $request): Response
+    {
+        // Auth
+        $authService = new \App\Services\Auth\AuthService();
+        if (!$authService->check()) {
+            return Response::json(['success' => false, 'message' => 'Non authentifié.'], 401);
+        }
+
+        // CSRF
+        if (!\App\Core\Csrf::verify($_POST['_token'] ?? null)) {
+            return Response::json(['success' => false, 'message' => 'Jeton CSRF invalide.'], 403);
+        }
+
+        $ids = $this->extractBulkIds($request);
+        if (empty($ids)) {
+            return Response::json(['success' => false, 'message' => 'Aucun équipement sélectionné.'], 422);
+        }
+
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        $count  = $this->repo->bulkSoftDelete($ids, $userId);
+
+        return Response::json([
+            'success' => true,
+            'message' => $count . ' équipement(s) placé(s) dans la corbeille.',
+            'count'   => $count,
+        ]);
+    }
+
+    /**
+     * Export CSV de la sélection uniquement.
+     */
+    public function bulkExportCsv(Request $request): Response
+    {
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+
+        $ids = $this->extractBulkIds($request);
+        if (empty($ids)) {
+            flash('error', 'Aucun équipement sélectionné pour l\'export.');
+            return $this->redirect(url('equipment'));
+        }
+
+        $equipments = $this->repo->findByIds($ids);
+
+        $filename = 'equipements_selection_' . date('Y-m-d_H-i') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($output, [
+            'Numero Inventaire',
+            'Designation',
+            'Categorie',
+            'Marque',
+            'Modele',
+            'N° Serie',
+            'Service',
+            'Site',
+            'Statut',
+            'Valeur (DA)',
+            'Date acquisition',
+            'Fin garantie',
+        ], ';');
+
+        foreach ($equipments as $eq) {
+            fputcsv($output, [
+                $eq->inventoryNumber,
+                $eq->designation,
+                $eq->categoryName  ?? '—',
+                $eq->brandName     ?? '—',
+                $eq->modelText     ?? '—',
+                $eq->serialNumber  ?? '—',
+                $eq->serviceName   ?? '—',
+                $eq->siteName      ?? '—',
+                $eq->statusName    ?? '—',
+                number_format($eq->acquisitionValue, 2, ',', ' '),
+                $eq->acquisitionDate  ?? '—',
+                $eq->warrantyEndDate  ?? '—',
+            ], ';');
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    // ============================================
     // HELPERS PRIVÉS
     // ============================================
     private function extractFormData(Request $request): array
@@ -951,6 +1100,34 @@ final class EquipmentController extends Controller
             'technical_specs'     => $toNull($request->input('technical_specs')),
             'notes'               => $toNull($request->input('notes')),
         ];
+    }
+
+    /**
+     * Extrait les IDs depuis plusieurs formats d'entrée (bulk actions).
+     *
+     * @return int[]
+     */
+    private function extractBulkIds(Request $request): array
+    {
+        // Format 1 : "ids[]" (array PHP classique)
+        $ids = $request->input('ids', []);
+
+        // Format 2 : "ids" en JSON string
+        if (is_string($ids) && $ids !== '') {
+            $decoded = json_decode($ids, true);
+            if (is_array($decoded)) {
+                $ids = $decoded;
+            } else {
+                // Format 3 : "1,2,3"
+                $ids = array_map('trim', explode(',', $ids));
+            }
+        }
+
+        if (!is_array($ids)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('intval', $ids), fn($id) => $id > 0));
     }
 
     private function loadCategories(): array

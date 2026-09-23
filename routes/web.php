@@ -34,7 +34,7 @@ $router->get('/logout',   [AuthController::class, 'logout']);
 $router->get('/dashboard', [DashboardController::class, 'index']);
 
 // ============================================
-// RECHERCHE GLOBALE (AJAX)  ← NOUVEAU
+// RECHERCHE GLOBALE (AJAX)
 // ============================================
 $router->get('/search', [EquipmentController::class, 'searchAjax']);
 
@@ -47,6 +47,14 @@ $router->get('/equipment/create',             [EquipmentController::class, 'crea
 $router->get('/equipment/trash',              [EquipmentController::class, 'trash']);
 $router->get('/equipment/export-csv',         [EquipmentController::class, 'exportCsv']);
 $router->get('/equipment/export-pdf',         [EquipmentController::class, 'exportPdf']);
+
+// ============================================
+// ACTIONS GROUPÉES (BULK)  ← NOUVEAU
+// ============================================
+// IMPORTANT : ces routes doivent être AVANT /equipment/{id}
+$router->post('/equipment/bulk/status',       [EquipmentController::class, 'bulkUpdateStatus']);
+$router->post('/equipment/bulk/delete',       [EquipmentController::class, 'bulkDelete']);
+$router->get('/equipment/bulk/export',        [EquipmentController::class, 'bulkExportCsv']);
 
 // Routes POST (création, mise à jour, suppression)
 $router->post('/equipment',                   [EquipmentController::class, 'store']);

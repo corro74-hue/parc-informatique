@@ -53,12 +53,10 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
     </div>
 </div>
 
-<!-- NOUVEAU : Barre de compteurs par statut -->
+<!-- Barre de compteurs par statut -->
 <?php if (!empty($statusCounts)): ?>
     <?php
-    // Total de tous les équipements (hors corbeille)
     $totalCount = array_sum(array_column($statusCounts, 'count'));
-    // Statut actuellement sélectionné dans les filtres
     $activeStatusId = !empty($filters['status_id']) ? (int) $filters['status_id'] : null;
     ?>
     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
@@ -69,10 +67,9 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
         <?php foreach ($statusCounts as $st): ?>
             <?php
             $isActive = ($activeStatusId === (int) $st['id']);
-            // URL de filtre : on conserve les filtres existants et on change status_id
             $params = $_GET;
             $params['status_id'] = $st['id'];
-            unset($params['page']); // on repart à la page 1
+            unset($params['page']);
             $url = url('equipment') . '?' . http_build_query($params);
             ?>
             <a href="<?= $url ?>"
@@ -100,7 +97,6 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
         <?php endforeach; ?>
 
         <?php
-        // Badge "Tous" — pour réinitialiser le filtre statut
         $paramsAll = $_GET;
         unset($paramsAll['status_id'], $paramsAll['page']);
         $urlAll = url('equipment') . (!empty($paramsAll) ? '?' . http_build_query($paramsAll) : '');
@@ -158,6 +154,10 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
         <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
                 <tr>
+                    <!-- NOUVEAU : Case à cocher "tout sélectionner" -->
+                    <th width="40" class="text-center">
+                        <input type="checkbox" class="form-check-input" id="bulk-check-all" title="Tout sélectionner">
+                    </th>
                     <th width="130">
                         <a href="<?= $sortUrl('inventory_number') ?>" class="text-decoration-none text-dark">
                             N° inventaire <?= $sortIcon('inventory_number') ?>
@@ -183,7 +183,7 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
             <tbody>
                 <?php if (empty($result['data'])): ?>
                     <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
+                        <td colspan="9" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox" style="font-size: 2rem;"></i>
                             <p class="mt-2 mb-0">Aucun équipement trouvé.</p>
                             <?php if (!empty($filters['search']) || !empty($filters['category_id']) || !empty($filters['status_id'])): ?>
@@ -201,6 +201,11 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
                 <?php else: ?>
                     <?php foreach ($result['data'] as $eq): ?>
                         <tr>
+                            <!-- NOUVEAU : Case à cocher par ligne -->
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input bulk-checkbox"
+                                       data-id="<?= $eq->id ?>">
+                            </td>
                             <td>
                                 <a href="<?= url('equipment/' . $eq->id) ?>" class="text-decoration-none fw-semibold">
                                     <?= e($eq->inventoryNumber) ?>
@@ -322,3 +327,48 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
         </ul>
     </nav>
 <?php endif; ?>
+
+<!-- ============================================ -->
+<!-- NOUVEAU : Barre d'actions groupées (bulk)    -->
+<!-- ============================================ -->
+<div id="bulk-actions-bar" class="bulk-actions-bar">
+    <div class="bulk-bar-content">
+        <div class="bulk-bar-info">
+            <i class="bi bi-check2-square"></i>
+            <span id="bulk-count">0 équipement sélectionné</span>
+        </div>
+
+        <div class="bulk-bar-actions">
+            <!-- Changer le statut -->
+            <div class="input-group input-group-sm" style="width: 280px;">
+                <select id="bulk-status-select" class="form-select">
+                    <option value="">-- Changer le statut --</option>
+                    <?php foreach ($statuses as $s): ?>
+                        <option value="<?= (int) $s['id'] ?>"><?= e($s['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" class="btn btn-primary" id="bulk-apply-status">
+                    <i class="bi bi-check-lg"></i> Appliquer
+                </button>
+            </div>
+
+            <!-- Export -->
+            <button type="button" class="btn btn-sm btn-success" id="bulk-export" title="Exporter la sélection">
+                <i class="bi bi-file-earmark-excel"></i> Exporter
+            </button>
+
+            <!-- Delete -->
+            <button type="button" class="btn btn-sm btn-danger" id="bulk-delete" title="Mettre à la corbeille">
+                <i class="bi bi-trash"></i> Corbeille
+            </button>
+
+            <!-- Deselect -->
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-deselect" title="Désélectionner tout">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Chargement du script JS bulk -->
+<script src="<?= url('assets/js/equipment-bulk.js') ?>"></script>

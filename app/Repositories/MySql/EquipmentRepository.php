@@ -512,6 +512,121 @@ final class EquipmentRepository implements EquipmentRepositoryInterface
     }
 
     // ============================================
+    // ACTIONS GROUPÉES (BULK)  ← NOUVEAU
+    // ============================================
+
+    /**
+     * Met à jour le statut de PLUSIEURS équipements d'un coup.
+     *
+     * @param int[] $ids
+     */
+    public function bulkUpdateStatus(array $ids, int $statusId, int $userId): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+
+        // Sécuriser : ne garder que les entiers positifs
+        $ids = array_values(array_filter(array_map('intval', $ids), fn($id) => $id > 0));
+        if (empty($ids)) {
+            return 0;
+        }
+
+        // Construire les placeholders nommés :id0, :id1, :id2...
+        $placeholders = [];
+        $params = ['status_id' => $statusId, 'updated_by' => $userId];
+        foreach ($ids as $i => $id) {
+            $key = 'id' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $id;
+        }
+
+        $sql = 'UPDATE equipment
+                SET status_id  = :status_id,
+                    updated_by = :updated_by,
+                    updated_at = NOW()
+                WHERE id IN (' . implode(',', $placeholders) . ')
+                  AND deleted_at IS NULL';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Met à la corbeille PLUSIEURS équipements d'un coup (soft delete).
+     *
+     * @param int[] $ids
+     */
+    public function bulkSoftDelete(array $ids, int $userId): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $ids = array_values(array_filter(array_map('intval', $ids), fn($id) => $id > 0));
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $placeholders = [];
+        $params = ['user_id' => $userId];
+        foreach ($ids as $i => $id) {
+            $key = 'id' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $id;
+        }
+
+        $sql = 'UPDATE equipment
+                SET deleted_at = NOW(),
+                    updated_by = :user_id
+                WHERE id IN (' . implode(',', $placeholders) . ')
+                  AND deleted_at IS NULL';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Récupère PLUSIEURS équipements par leurs IDs.
+     *
+     * @param int[] $ids
+     * @return Equipment[]
+     */
+    public function findByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $ids = array_values(array_filter(array_map('intval', $ids), fn($id) => $id > 0));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = [];
+        $params = [];
+        foreach ($ids as $i => $id) {
+            $key = 'id' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $id;
+        }
+
+        $sql = self::BASE_SELECT
+             . ' WHERE e.id IN (' . implode(',', $placeholders) . ')
+                 AND e.deleted_at IS NULL
+               ORDER BY e.inventory_number ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return array_map(fn($r) => Equipment::fromArray($r), $stmt->fetchAll());
+    }
+
+    // ============================================
     // GÉNÉRATION DE CODE
     // ============================================
 

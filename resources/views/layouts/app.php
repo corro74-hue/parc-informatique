@@ -128,7 +128,7 @@
         }
 
         /* ============================================ */
-        /* NOUVEAU : Barre de recherche globale         */
+        /* Barre de recherche globale                   */
         /* ============================================ */
         .global-search-wrapper {
             position: relative;
@@ -253,6 +253,65 @@
             letter-spacing: 0.3px;
             flex-shrink: 0;
         }
+
+        /* ============================================ */
+        /* NOUVEAU : Barre d'actions groupées (bulk)    */
+        /* ============================================ */
+        .bulk-actions-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(150%);
+            z-index: 1050;
+            transition: transform 0.25s ease;
+            max-width: 1100px;
+            width: calc(100% - 40px);
+        }
+        .bulk-actions-bar.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .bulk-bar-content {
+            background: #1e293b;
+            color: #fff;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .bulk-bar-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .bulk-bar-info i {
+            font-size: 1.3rem;
+            color: var(--primary);
+        }
+        .bulk-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .bulk-bar-actions .form-select {
+            background-color: #fff;
+            border-color: #475569;
+        }
+        @media (max-width: 768px) {
+            .bulk-bar-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .bulk-bar-actions {
+                justify-content: center;
+            }
+        }
     </style>
 
     <!-- Configuration JS globale -->
@@ -321,7 +380,7 @@
         <div class="topbar">
             <h2><?= e($title ?? 'Accueil') ?></h2>
 
-            <!-- NOUVEAU : Barre de recherche globale -->
+            <!-- Barre de recherche globale -->
             <div class="global-search-wrapper">
                 <div class="global-search-box">
                     <i class="bi bi-search global-search-icon"></i>
@@ -385,5 +444,6 @@
     <!-- Scripts personnalisés -->
     <script src="<?= url('assets/js/equipment-status.js') ?>"></script>
     <script src="<?= url('assets/js/global-search.js') ?>"></script>
+    <script src="<?= url('assets/js/equipment-bulk.js') ?>"></script>
 </body>
 </html>
