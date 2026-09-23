@@ -1,0 +1,6 @@
+inventory_number;designation;category_code;brand_name;model_text;serial_number;service_name;site_name;status_code;acquisition_date;acquisition_value;warranty_end_date
+INF-TEST-001;PC Bureau Dell OptiPlex;PC;Dell;OptiPlex 3080;SN-TEST-001;Service Informatique;Siège principal;in_service;2024-01-15;95000;2027-01-15
+INF-TEST-002;Imprimante HP LaserJet;PRINT;HP;LaserJet Pro M404;SN-TEST-002;Comptabilité;Siège principal;in_service;2024-03-01;45000;2026-03-01
+INF-TEST-003;Écran Dell 24 pouces;SCREEN;Dell;P2419H;SN-TEST-003;Service Informatique;Siège principal;in_service;2024-05-10;28000;2027-05-10
+INF-TEST-004;Scanner Canon;SCAN;Canon;CanoScan Lide 400;SN-TEST-004;Ressources Humaines;Siège principal;in_stock;2024-02-20;15000;2026-02-20
+INF-TEST-005;Serveur Dell PowerEdge;SERVER;Dell;PowerEdge T340;SN-TEST-005;Service Informatique;Siège principal;maintenance;2023-11-05;350000;2026-11-05

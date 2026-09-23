@@ -922,7 +922,7 @@ final class EquipmentController extends Controller
     }
 
     // ============================================
-    // ACTIONS GROUPÉES (BULK - AJAX)  ← NOUVEAU
+    // ACTIONS GROUPÉES (BULK - AJAX)
     // ============================================
 
     /**
@@ -1071,6 +1071,180 @@ final class EquipmentController extends Controller
     }
 
     // ============================================
+    // IMPORT CSV  ← NOUVEAU
+    // ============================================
+
+    /**
+     * Affiche le formulaire d'import.
+     */
+    public function importForm(Request $request): Response
+    {
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+
+        return $this->view('equipment.import', [
+            'title'   => 'Importer des équipements',
+            'preview' => null,
+            'report'  => null,
+        ], 'app');
+    }
+
+    /**
+     * Analyse le fichier uploadé et affiche un aperçu AVANT validation.
+     */
+    public function importPreview(Request $request): Response
+    {
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+        if ($r = (new CsrfMiddleware())->handle()) return $r;
+
+        // ----- 1. Vérifier l'upload -----
+        if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+            flash('error', 'Aucun fichier reçu ou erreur d\'upload.');
+            return $this->redirect(url('equipment/import'));
+        }
+
+        $file = $_FILES['csv_file'];
+
+        // ----- 2. Vérifier l'extension -----
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['csv', 'txt'], true)) {
+            flash('error', 'Format non supporté. Utilisez un fichier .csv');
+            return $this->redirect(url('equipment/import'));
+        }
+
+        // ----- 3. Vérifier la taille (max 5 Mo) -----
+        if ($file['size'] > 5 * 1024 * 1024) {
+            flash('error', 'Fichier trop volumineux (max 5 Mo).');
+            return $this->redirect(url('equipment/import'));
+        }
+
+        // ----- 4. Sauvegarder le fichier dans storage/imports -----
+        $uploadDir = dirname(__DIR__, 2) . '/storage/imports';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $storedName = 'import_' . date('Y-m-d_H-i-s') . '_' . bin2hex(random_bytes(4)) . '.csv';
+        $storedPath = $uploadDir . '/' . $storedName;
+
+        if (!move_uploaded_file($file['tmp_name'], $storedPath)) {
+            flash('error', 'Impossible de sauvegarder le fichier.');
+            return $this->redirect(url('equipment/import'));
+        }
+
+        // ----- 5. Analyser le fichier -----
+        try {
+            $analysis = $this->analyzeCsvFile($storedPath);
+        } catch (\Throwable $e) {
+            @unlink($storedPath);
+            flash('error', 'Erreur d\'analyse : ' . $e->getMessage());
+            return $this->redirect(url('equipment/import'));
+        }
+
+        // ----- 6. Stocker le chemin en session pour l'étape suivante -----
+        $_SESSION['_import_file'] = $storedPath;
+
+        return $this->view('equipment.import', [
+            'title'      => 'Aperçu de l\'import',
+            'preview'    => $analysis['rows'],
+            'report'     => $analysis['report'],
+            'filename'   => $file['name'],
+            'total_rows' => count($analysis['rows']),
+        ], 'app');
+    }
+
+    /**
+     * Insère effectivement les données en base.
+     */
+    public function importStore(Request $request): Response
+    {
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+        if ($r = (new CsrfMiddleware())->handle()) return $r;
+
+        $path = $_SESSION['_import_file'] ?? null;
+        if (!$path || !is_file($path)) {
+            flash('error', 'Fichier d\'import introuvable. Recommencez.');
+            return $this->redirect(url('equipment/import'));
+        }
+
+        // ----- Analyser à nouveau (au cas où) -----
+        try {
+            $analysis = $this->analyzeCsvFile($path);
+        } catch (\Throwable $e) {
+            @unlink($path);
+            unset($_SESSION['_import_file']);
+            flash('error', 'Erreur : ' . $e->getMessage());
+            return $this->redirect(url('equipment/import'));
+        }
+
+        // ----- Insérer les lignes valides -----
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        $validRows = $analysis['valid_rows'];
+
+        foreach ($validRows as &$row) {
+            $row['created_by'] = $userId;
+        }
+        unset($row);
+
+        $inserted = 0;
+        try {
+            $inserted = $this->repo->bulkInsert($validRows);
+        } catch (\Throwable $e) {
+            flash('error', 'Erreur lors de l\'insertion : ' . $e->getMessage());
+            return $this->redirect(url('equipment/import'));
+        }
+
+        // ----- Nettoyer -----
+        @unlink($path);
+        unset($_SESSION['_import_file']);
+
+        $errorCount = count($analysis['report']['errors']);
+        flash('success', "{$inserted} équipement(s) importé(s) avec succès. " .
+            ($errorCount > 0 ? "{$errorCount} erreur(s) ignorée(s)." : ""));
+
+        return $this->redirect(url('equipment'));
+    }
+
+    /**
+     * Télécharge un modèle CSV vierge.
+     */
+    public function importTemplate(Request $request): Response
+    {
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+
+        $filename = 'modele_import_equipements.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // En-tête
+        fputcsv($output, [
+            'inventory_number',
+            'designation',
+            'category_code',
+            'brand_name',
+            'model_text',
+            'serial_number',
+            'service_name',
+            'site_name',
+            'status_code',
+            'acquisition_date',
+            'acquisition_value',
+            'warranty_end_date',
+        ], ';');
+
+        // Exemples
+        fputcsv($output, ['INF-2026-0001', 'PC Bureau Dell OptiPlex', 'PC', 'Dell', 'OptiPlex 3080', 'SN-ABC123', 'Informatique', 'Siège principal', 'EN_SERVICE', '2024-01-15', '95000', '2027-01-15'], ';');
+        fputcsv($output, ['', 'Imprimante HP LaserJet', 'IMP', 'HP', 'LaserJet Pro M404', 'SN-XYZ789', 'Comptabilité', 'Siège principal', 'EN_SERVICE', '2024-03-01', '45000', '2026-03-01'], ';');
+
+        fclose($output);
+        exit;
+    }
+
+    // ============================================
     // HELPERS PRIVÉS
     // ============================================
     private function extractFormData(Request $request): array
@@ -1128,6 +1302,221 @@ final class EquipmentController extends Controller
         }
 
         return array_values(array_filter(array_map('intval', $ids), fn($id) => $id > 0));
+    }
+
+    /**
+     * Analyse un fichier CSV d'import.
+     * Retourne un rapport + les lignes valides prêtes à insérer.
+     *
+     * @return array{
+     *     rows: array<int, array<string, mixed>>,
+     *     valid_rows: array<int, array<string, mixed>>,
+     *     report: array{total: int, valid: int, errors: array<int, array{line: int, message: string}>}
+     * }
+     */
+    private function analyzeCsvFile(string $path): array
+    {
+        // ----- Ouvrir le fichier -----
+        $handle = fopen($path, 'r');
+        if (!$handle) {
+            throw new \RuntimeException('Impossible d\'ouvrir le fichier.');
+        }
+
+        // ----- Détecter et retirer le BOM UTF-8 -----
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        // ----- Lire l'en-tête -----
+        $header = fgetcsv($handle, 0, ';');
+        if (!$header) {
+            fclose($handle);
+            throw new \RuntimeException('Fichier vide ou en-tête manquant.');
+        }
+
+        // Nettoyer les noms de colonnes
+        $header = array_map(fn($h) => strtolower(trim((string) $h)), $header);
+
+        // ----- Colonnes attendues -----
+        $expected = [
+            'inventory_number', 'designation', 'category_code', 'brand_name',
+            'model_text', 'serial_number', 'service_name', 'site_name',
+            'status_code', 'acquisition_date', 'acquisition_value', 'warranty_end_date',
+        ];
+
+        $missing = array_diff($expected, $header);
+        if (!empty($missing)) {
+            fclose($handle);
+            throw new \RuntimeException('Colonnes manquantes : ' . implode(', ', $missing));
+        }
+
+        $headerIndex = array_flip($header);
+
+        // ----- Charger les données de référence -----
+        $categories  = $this->repo->getCategoriesByCode();
+        $statuses    = $this->repo->getStatusesByCode();
+        $brands      = $this->repo->getBrandsByName();
+        $services    = $this->repo->getServicesByName();
+        $sites       = $this->repo->getSitesByName();
+        $existingInv = $this->repo->getExistingInventoryNumbers();
+        $existingSer = $this->repo->getExistingSerialNumbers();
+
+        // ----- Parcourir les lignes -----
+        $rows       = [];
+        $validRows  = [];
+        $errors     = [];
+        $lineNumber = 1;
+
+        while (($line = fgetcsv($handle, 0, ';')) !== false) {
+            $lineNumber++;
+
+            // Ignorer les lignes vides
+            if (count($line) === 1 && trim((string) $line[0]) === '') {
+                continue;
+            }
+
+            $row = [];
+            foreach ($headerIndex as $col => $idx) {
+                $row[$col] = isset($line[$idx]) ? trim((string) $line[$idx]) : '';
+            }
+
+            // ----- Validation -----
+            $rowErrors = [];
+
+            // designation (obligatoire)
+            if ($row['designation'] === '') {
+                $rowErrors[] = 'La désignation est obligatoire.';
+            }
+
+            // category_code → category_id
+            $categoryId = null;
+            if ($row['category_code'] !== '') {
+                $key = strtolower($row['category_code']);
+                if (isset($categories[$key])) {
+                    $categoryId = $categories[$key];
+                } else {
+                    $rowErrors[] = "Catégorie inconnue : '{$row['category_code']}'";
+                }
+            } else {
+                $rowErrors[] = 'La catégorie est obligatoire.';
+            }
+
+            // status_code → status_id
+            $statusId = null;
+            if ($row['status_code'] !== '') {
+                $key = strtolower($row['status_code']);
+                if (isset($statuses[$key])) {
+                    $statusId = $statuses[$key];
+                } else {
+                    $rowErrors[] = "Statut inconnu : '{$row['status_code']}'";
+                }
+            } else {
+                $rowErrors[] = 'Le statut est obligatoire.';
+            }
+
+            // brand_name → brand_id (optionnel)
+            $brandId = null;
+            if ($row['brand_name'] !== '') {
+                $key = strtolower($row['brand_name']);
+                $brandId = $brands[$key] ?? null;
+                if ($brandId === null) {
+                    $rowErrors[] = "Marque inconnue : '{$row['brand_name']}' (sera ignorée)";
+                }
+            }
+
+            // service_name → service_id
+            $serviceId = null;
+            if ($row['service_name'] !== '') {
+                $key = strtolower($row['service_name']);
+                $serviceId = $services[$key] ?? null;
+                if ($serviceId === null) {
+                    $rowErrors[] = "Service inconnu : '{$row['service_name']}' (sera ignoré)";
+                }
+            }
+
+            // site_name → site_id
+            $siteId = null;
+            if ($row['site_name'] !== '') {
+                $key = strtolower($row['site_name']);
+                $siteId = $sites[$key] ?? null;
+                if ($siteId === null) {
+                    $rowErrors[] = "Site inconnu : '{$row['site_name']}' (sera ignoré)";
+                }
+            }
+
+            // inventory_number (doublon ?)
+            $invNumber = $row['inventory_number'];
+            if ($invNumber !== '' && isset($existingInv[strtoupper($invNumber)])) {
+                $rowErrors[] = "N° d'inventaire déjà existant : '{$invNumber}'";
+            }
+
+            // serial_number (doublon ?)
+            $serial = $row['serial_number'];
+            if ($serial !== '' && isset($existingSer[strtoupper($serial)])) {
+                $rowErrors[] = "N° de série déjà existant : '{$serial}'";
+            }
+
+            // Dates
+            $acqDate = $row['acquisition_date'] !== '' ? $row['acquisition_date'] : null;
+            $warrantyDate = $row['warranty_end_date'] !== '' ? $row['warranty_end_date'] : null;
+
+            // Valeur
+            $value = $row['acquisition_value'] !== '' ? (float) str_replace(',', '.', $row['acquisition_value']) : 0.0;
+
+            // ----- Construire la ligne -----
+            $data = [
+                'inventory_number'    => $invNumber ?: null, // null = auto-généré
+                'designation'         => $row['designation'],
+                'category_id'         => $categoryId,
+                'brand_id'            => $brandId,
+                'model_text'          => $row['model_text'] ?: null,
+                'serial_number'       => $serial ?: null,
+                'service_id'          => $serviceId,
+                'site_id'             => $siteId,
+                'status_id'           => $statusId,
+                'acquisition_date'    => $acqDate,
+                'acquisition_value'   => $value,
+                'warranty_end_date'   => $warrantyDate,
+                'created_by'          => 0, // sera remplacé à l'insertion
+            ];
+
+            // ----- Ajouter à l'aperçu -----
+            $rows[] = [
+                'line'     => $lineNumber,
+                'data'     => $data,
+                'errors'   => $rowErrors,
+                'is_valid' => empty($rowErrors),
+            ];
+
+            // ----- Ajouter aux valides si OK -----
+            if (empty($rowErrors) && $categoryId && $statusId) {
+                // Auto-générer un N° d'inventaire si vide
+                if ($data['inventory_number'] === null) {
+                    $data['inventory_number'] = $this->repo->generateNextInventoryNumber();
+                    // Mettre à jour le registre pour éviter les doublons dans le même import
+                    $existingInv[strtoupper($data['inventory_number'])] = true;
+                }
+                $validRows[] = $data;
+            }
+        }
+
+        fclose($handle);
+
+        return [
+            'rows'       => $rows,
+            'valid_rows' => $validRows,
+            'report'     => [
+                'total'  => count($rows),
+                'valid'  => count($validRows),
+                'errors' => array_values(array_filter(
+                    array_map(function ($r) {
+                        if (empty($r['errors'])) return null;
+                        return ['line' => $r['line'], 'message' => implode(' | ', $r['errors'])];
+                    }, $rows)
+                )),
+            ],
+        ];
     }
 
     private function loadCategories(): array

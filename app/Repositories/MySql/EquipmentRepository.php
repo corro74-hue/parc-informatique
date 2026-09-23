@@ -415,6 +415,36 @@ final class EquipmentRepository implements EquipmentRepositoryInterface
 
     public function create(array $data): int
     {
+        // ----- Compléter les champs manquants avec des valeurs par défaut -----
+        // (indispensable pour l'import CSV qui n'envoie que certains champs)
+        $defaults = [
+            'inventory_number'    => null,
+            'category_id'         => null,
+            'designation'         => null,
+            'brand_id'            => null,
+            'model_id'            => null,
+            'model_text'          => null,
+            'serial_number'       => null,
+            'site_id'             => null,
+            'service_id'          => null,
+            'location_id'         => null,
+            'responsible_id'      => null,
+            'supplier_id'         => null,
+            'status_id'           => null,
+            'acquisition_date'    => null,
+            'commissioning_date'  => null,
+            'acquisition_value'   => 0,
+            'residual_value'      => 0,
+            'amortization_years'  => null,
+            'invoice_number'      => null,
+            'warranty_end_date'   => null,
+            'technical_specs'     => null,
+            'notes'               => null,
+            'created_by'          => null,
+        ];
+
+        $data = array_merge($defaults, $data);
+
         $sql = 'INSERT INTO equipment (
                     inventory_number, category_id, designation, brand_id, model_id,
                     model_text, serial_number, site_id, service_id, location_id,
@@ -512,7 +542,7 @@ final class EquipmentRepository implements EquipmentRepositoryInterface
     }
 
     // ============================================
-    // ACTIONS GROUPÉES (BULK)  ← NOUVEAU
+    // ACTIONS GROUPÉES (BULK)
     // ============================================
 
     /**
@@ -624,6 +654,145 @@ final class EquipmentRepository implements EquipmentRepositoryInterface
         $stmt->execute($params);
 
         return array_map(fn($r) => Equipment::fromArray($r), $stmt->fetchAll());
+    }
+
+    // ============================================
+    // IMPORT EN MASSE (CSV)
+    // ============================================
+
+    /**
+     * Insère plusieurs équipements d'un coup (bulk insert).
+     * Chaque entrée doit contenir les clés attendues par create().
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return int Nombre d'équipements insérés
+     */
+    public function bulkInsert(array $rows): int
+    {
+        if (empty($rows)) {
+            return 0;
+        }
+
+        $inserted = 0;
+        $this->db->beginTransaction();
+
+        try {
+            foreach ($rows as $row) {
+                $this->create($row);
+                $inserted++;
+            }
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+
+        return $inserted;
+    }
+
+    /**
+     * Récupère toutes les catégories indexées par code.
+     *
+     * @return array<string, int> ['pc' => 1, 'imp' => 2, ...]
+     */
+    public function getCategoriesByCode(): array
+    {
+        $stmt = $this->db->query('SELECT id, code FROM equipment_categories');
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[strtolower((string) $row['code'])] = (int) $row['id'];
+        }
+        return $result;
+    }
+
+    /**
+     * Récupère tous les statuts indexés par code.
+     *
+     * @return array<string, int>
+     */
+    public function getStatusesByCode(): array
+    {
+        $stmt = $this->db->query('SELECT id, code FROM equipment_statuses');
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[strtolower((string) $row['code'])] = (int) $row['id'];
+        }
+        return $result;
+    }
+
+    /**
+     * Récupère toutes les marques indexées par nom (en minuscules).
+     *
+     * @return array<string, int>
+     */
+    public function getBrandsByName(): array
+    {
+        $stmt = $this->db->query('SELECT id, name FROM brands');
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[strtolower(trim((string) $row['name']))] = (int) $row['id'];
+        }
+        return $result;
+    }
+
+    /**
+     * Récupère tous les services indexés par nom.
+     *
+     * @return array<string, int>
+     */
+    public function getServicesByName(): array
+    {
+        $stmt = $this->db->query('SELECT id, name FROM services WHERE is_active = 1');
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[strtolower(trim((string) $row['name']))] = (int) $row['id'];
+        }
+        return $result;
+    }
+
+    /**
+     * Récupère tous les sites indexés par nom.
+     *
+     * @return array<string, int>
+     */
+    public function getSitesByName(): array
+    {
+        $stmt = $this->db->query('SELECT id, name FROM sites WHERE is_active = 1');
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[strtolower(trim((string) $row['name']))] = (int) $row['id'];
+        }
+        return $result;
+    }
+
+    /**
+     * Récupère tous les numéros d'inventaire existants (pour détecter les doublons).
+     *
+     * @return array<string, bool> ['INF-2026-0001' => true, ...]
+     */
+    public function getExistingInventoryNumbers(): array
+    {
+        $stmt = $this->db->query('SELECT inventory_number FROM equipment');
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[strtoupper((string) $row['inventory_number'])] = true;
+        }
+        return $result;
+    }
+
+    /**
+     * Récupère tous les numéros de série existants (pour détecter les doublons).
+     *
+     * @return array<string, bool>
+     */
+    public function getExistingSerialNumbers(): array
+    {
+        $stmt = $this->db->query('SELECT serial_number FROM equipment WHERE serial_number IS NOT NULL');
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[strtoupper((string) $row['serial_number'])] = true;
+        }
+        return $result;
     }
 
     // ============================================

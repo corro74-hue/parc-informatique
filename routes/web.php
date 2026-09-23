@@ -49,12 +49,21 @@ $router->get('/equipment/export-csv',         [EquipmentController::class, 'expo
 $router->get('/equipment/export-pdf',         [EquipmentController::class, 'exportPdf']);
 
 // ============================================
-// ACTIONS GROUPÉES (BULK)  ← NOUVEAU
+// ACTIONS GROUPÉES (BULK)
 // ============================================
 // IMPORTANT : ces routes doivent être AVANT /equipment/{id}
 $router->post('/equipment/bulk/status',       [EquipmentController::class, 'bulkUpdateStatus']);
 $router->post('/equipment/bulk/delete',       [EquipmentController::class, 'bulkDelete']);
 $router->get('/equipment/bulk/export',        [EquipmentController::class, 'bulkExportCsv']);
+
+// ============================================
+// IMPORT CSV  ← NOUVEAU
+// ============================================
+// IMPORTANT : ces routes doivent être AVANT /equipment/{id}
+$router->get('/equipment/import',             [EquipmentController::class, 'importForm']);
+$router->post('/equipment/import/preview',    [EquipmentController::class, 'importPreview']);
+$router->post('/equipment/import/store',      [EquipmentController::class, 'importStore']);
+$router->get('/equipment/import/template',    [EquipmentController::class, 'importTemplate']);
 
 // Routes POST (création, mise à jour, suppression)
 $router->post('/equipment',                   [EquipmentController::class, 'store']);

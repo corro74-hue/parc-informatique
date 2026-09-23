@@ -47,6 +47,11 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
             <i class="bi bi-file-earmark-pdf"></i> Exporter PDF
         </a>
 
+        <!-- NOUVEAU : Bouton Importer -->
+        <a href="<?= url('equipment/import') ?>" class="btn btn-outline-primary" title="Importer depuis un fichier CSV">
+            <i class="bi bi-upload"></i> Importer
+        </a>
+
         <a href="<?= url('equipment/create') ?>" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nouvel équipement
         </a>
@@ -154,7 +159,7 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
         <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
                 <tr>
-                    <!-- NOUVEAU : Case à cocher "tout sélectionner" -->
+                    <!-- Case à cocher "tout sélectionner" -->
                     <th width="40" class="text-center">
                         <input type="checkbox" class="form-check-input" id="bulk-check-all" title="Tout sélectionner">
                     </th>
@@ -201,7 +206,7 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
                 <?php else: ?>
                     <?php foreach ($result['data'] as $eq): ?>
                         <tr>
-                            <!-- NOUVEAU : Case à cocher par ligne -->
+                            <!-- Case à cocher par ligne -->
                             <td class="text-center">
                                 <input type="checkbox" class="form-check-input bulk-checkbox"
                                        data-id="<?= $eq->id ?>">
@@ -329,7 +334,7 @@ $sortIcon = function (string $column) use ($currentSort, $currentDir) {
 <?php endif; ?>
 
 <!-- ============================================ -->
-<!-- NOUVEAU : Barre d'actions groupées (bulk)    -->
+<!-- Barre d'actions groupées (bulk)              -->
 <!-- ============================================ -->
 <div id="bulk-actions-bar" class="bulk-actions-bar">
     <div class="bulk-bar-content">
