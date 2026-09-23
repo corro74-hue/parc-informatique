@@ -1,0 +1,21 @@
+# Dépendances
+/vendor/
+/node_modules/
+
+# Fichiers de config locaux
+.env
+.env.local
+
+# Fichiers générés / cache
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+
+# Fichiers IDE
+.vscode/
+.idea/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
