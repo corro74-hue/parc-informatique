@@ -9,8 +9,11 @@ declare(strict_types=1);
 define('BASE_PATH', '/parc-informatique/public');
 
 // ============================================
-// SESSION SÉCURISÉE
+// SESSION SÉCURISÉE (Configuration des cookies)
 // ============================================
+// On configure le nom et les paramètres du cookie AVANT de démarrer la session.
+// Le démarrage réel de la session se fera PLUS TARD, après le chargement de Composer
+// et du .env, pour pouvoir utiliser le SessionHandler en BDD.
 session_name('PARC_SESSION');
 session_set_cookie_params([
     'lifetime' => 0,
@@ -20,7 +23,6 @@ session_set_cookie_params([
     'httponly' => true,
     'samesite' => 'Strict',
 ]);
-session_start();
 
 // ============================================
 // AUTOLOAD COMPOSER
@@ -55,6 +57,32 @@ error_reporting(E_ALL);
 // CONFIGURATION DE LA BASE DE DONNÉES
 // ============================================
 \App\Core\Database::configure(require dirname(__DIR__) . '/config/database.php');
+
+// ============================================
+// SESSION EN BDD (SessionHandler)
+// ============================================
+// On démarre maintenant la session, avec le SessionHandler en BDD.
+// Les données de session seront stockées dans la table `sessions` au lieu
+// de fichiers sur le disque, ce qui permet :
+//   - De voir toutes les sessions actives d'un utilisateur
+//   - De révoquer une session à distance (déconnexion forcée)
+//   - De détecter les connexions suspectes (IP/user-agent différents)
+if (session_status() === PHP_SESSION_NONE) {
+    $sessionLifetime = (int) ($_ENV['SESSION_LIFETIME'] ?? 7200);
+
+    // Renforce la sécurité du cookie (en plus des paramètres déjà définis plus haut)
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Strict');
+
+    // Enregistre le handler BDD
+    $handler = new \App\Core\SessionHandler(null, $sessionLifetime);
+    session_set_save_handler($handler, true);
+
+    // Démarre la session
+    session_start();
+}
 
 // ============================================
 // ROUTAGE
