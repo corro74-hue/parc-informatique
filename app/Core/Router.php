@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Middleware\PermissionMiddleware;
+use App\Middleware\SecurityHeadersMiddleware;
 
 final class Router
 {
@@ -45,6 +46,11 @@ final class Router
 
     public function dispatch(Request $request): Response
     {
+        // ============================================
+        // Headers de sécurité globaux (appliqués à TOUTES les réponses)
+        // ============================================
+        (new SecurityHeadersMiddleware())->handle();
+
         $method = $request->method;
         $uri    = $request->uri;
 
