@@ -39,6 +39,11 @@ $router->get('/dashboard', [DashboardController::class, 'index']);
 $router->get('/search', [EquipmentController::class, 'searchAjax']);
 
 // ============================================
+// JOURNAL D'AUDIT (Administration)  ← NOUVEAU
+// ============================================
+$router->get('/audit', [\App\Controllers\AuditController::class, 'index']);
+
+// ============================================
 // ÉQUIPEMENTS (module Inventaire)
 // ============================================
 // Routes spécifiques (doivent être AVANT les routes avec {id})
@@ -74,7 +79,7 @@ $router->get('/equipment/{id}/edit',          [EquipmentController::class, 'edit
 $router->get('/equipment/{id}/qrcode',        [EquipmentController::class, 'qrcode']);
 $router->get('/equipment/{id}/duplicate',     [EquipmentController::class, 'duplicate']);
 $router->get('/equipment/{id}/show-pdf',      [EquipmentController::class, 'showPdf']);
-$router->get('/equipment/{id}/history',       [EquipmentController::class, 'history']); // ← NOUVEAU
+$router->get('/equipment/{id}/history',       [EquipmentController::class, 'history']);
 
 // Routes POST avec ID
 $router->post('/equipment/{id}',              [EquipmentController::class, 'update']);
