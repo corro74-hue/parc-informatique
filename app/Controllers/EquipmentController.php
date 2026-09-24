@@ -868,6 +868,34 @@ final class EquipmentController extends Controller
     }
 
     // ============================================
+    // HISTORIQUE D'UN ÉQUIPEMENT  ← NOUVEAU
+    // ============================================
+    /**
+     * Affiche l'historique complet des modifications d'un équipement.
+     */
+    public function history(Request $request, string $id): Response
+    {
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+
+        // ----- Récupérer l'équipement -----
+        $equipment = $this->service->find((int) $id);
+        if (!$equipment) {
+            flash('error', 'Équipement introuvable.');
+            return $this->redirect(url('equipment'));
+        }
+
+        // ----- Récupérer l'historique via AuditRepository -----
+        $auditRepo = new \App\Repositories\MySql\AuditRepository();
+        $logs = $auditRepo->findByEntity('equipment', (int) $id, 100);
+
+        return $this->view('equipment.history', [
+            'title'     => 'Historique — ' . $equipment->inventoryNumber,
+            'equipment' => $equipment,
+            'logs'      => $logs,
+        ], 'app');
+    }
+
+    // ============================================
     // CHANGEMENT RAPIDE DE STATUT (AJAX)
     // ============================================
     /**

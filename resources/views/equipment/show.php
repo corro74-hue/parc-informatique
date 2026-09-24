@@ -20,10 +20,26 @@
         </h4>
         <p class="text-muted mb-0"><?= e($equipment->designation) ?></p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         <a href="<?= url('equipment') ?>" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Retour
         </a>
+
+        <!-- Bouton Fiche PDF -->
+        <a href="<?= url('equipment/' . $equipment->id . '/show-pdf') ?>"
+           class="btn btn-danger btn-sm"
+           target="_blank"
+           title="Aperçu avant impression de la fiche">
+            <i class="bi bi-file-earmark-pdf"></i> Fiche PDF
+        </a>
+
+        <!-- NOUVEAU : Bouton Historique -->
+        <a href="<?= url('equipment/' . $equipment->id . '/history') ?>"
+           class="btn btn-outline-info btn-sm"
+           title="Voir l'historique des modifications">
+            <i class="bi bi-clock-history"></i> Historique
+        </a>
+
         <a href="<?= url('equipment/' . $equipment->id . '/edit') ?>" class="btn btn-primary btn-sm">
             <i class="bi bi-pencil"></i> Modifier
         </a>
@@ -147,18 +163,24 @@
             </div>
         <?php endif; ?>
 
-        <!-- Historique (placeholder) -->
+        <!-- NOUVEAU : Historique (lien vers la page dédiée) -->
         <div class="card mb-3">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
                     <i class="bi bi-clock-history text-primary"></i> Historique
                 </h6>
-                <span class="badge bg-secondary">Bientôt</span>
+                <a href="<?= url('equipment/' . $equipment->id . '/history') ?>"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-right"></i> Voir tout
+                </a>
             </div>
-            <div class="card-body text-center text-muted py-4">
-                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-                <p class="mt-2 mb-0">L'historique des mouvements sera affiché ici.</p>
-                <small>Acquisition, affectations, maintenances, réformes...</small>
+            <div class="card-body text-center py-4">
+                <i class="bi bi-clock-history text-primary" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-2">Consultez l'historique complet des modifications</p>
+                <a href="<?= url('equipment/' . $equipment->id . '/history') ?>"
+                   class="btn btn-primary btn-sm">
+                    <i class="bi bi-clock-history"></i> Voir l'historique
+                </a>
             </div>
         </div>
 
