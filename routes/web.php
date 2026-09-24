@@ -6,6 +6,8 @@ use App\Core\Request;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\EquipmentController;
+use App\Controllers\UserController;
+use App\Controllers\RoleController;
 
 /** @var App\Core\Router $router */
 
@@ -29,6 +31,50 @@ $router->post('/logout',  [AuthController::class, 'logout']);
 $router->get('/logout',   [AuthController::class, 'logout']);
 
 // ============================================
+// UTILISATEURS (Administration)
+// ============================================
+// IMPORTANT : les routes spécifiques doivent être AVANT /users/{id}
+$router->get('/users',                       [UserController::class, 'index']);
+$router->get('/users/create',                [UserController::class, 'create']);
+
+// Routes POST (création)
+$router->post('/users',                      [UserController::class, 'store']);
+
+// Routes avec ID dynamique
+$router->get('/users/{id}',                  [UserController::class, 'show']);
+$router->get('/users/{id}/edit',             [UserController::class, 'edit']);
+
+// Routes POST avec ID
+$router->post('/users/{id}',                 [UserController::class, 'update']);
+$router->post('/users/{id}/delete',          [UserController::class, 'destroy']);
+$router->post('/users/{id}/reset-password',  [UserController::class, 'resetPassword']);
+$router->post('/users/{id}/toggle-active',   [UserController::class, 'toggleActive']);
+
+// ============================================
+// PROFIL PERSONNEL
+// ============================================
+$router->get('/profile',                     [UserController::class, 'profile']);
+$router->post('/profile/change-password',    [UserController::class, 'changePassword']);
+
+// ============================================
+// RÔLES ET PERMISSIONS (Administration)  ← NOUVEAU
+// ============================================
+// IMPORTANT : les routes spécifiques doivent être AVANT /roles/{id}
+$router->get('/roles',                       [RoleController::class, 'index']);
+$router->get('/roles/create',                [RoleController::class, 'create']);
+
+// Routes POST (création)
+$router->post('/roles',                      [RoleController::class, 'store']);
+
+// Routes avec ID dynamique
+$router->get('/roles/{id}',                  [RoleController::class, 'show']);
+$router->get('/roles/{id}/edit',             [RoleController::class, 'edit']);
+
+// Routes POST avec ID
+$router->post('/roles/{id}',                 [RoleController::class, 'update']);
+$router->post('/roles/{id}/delete',          [RoleController::class, 'destroy']);
+
+// ============================================
 // DASHBOARD (protégé)
 // ============================================
 $router->get('/dashboard', [DashboardController::class, 'index']);
@@ -39,7 +85,7 @@ $router->get('/dashboard', [DashboardController::class, 'index']);
 $router->get('/search', [EquipmentController::class, 'searchAjax']);
 
 // ============================================
-// JOURNAL D'AUDIT (Administration)  ← NOUVEAU
+// JOURNAL D'AUDIT (Administration)
 // ============================================
 $router->get('/audit', [\App\Controllers\AuditController::class, 'index']);
 
@@ -87,3 +133,11 @@ $router->post('/equipment/{id}/delete',       [EquipmentController::class, 'dest
 $router->post('/equipment/{id}/restore',      [EquipmentController::class, 'restore']);
 $router->post('/equipment/{id}/force-delete', [EquipmentController::class, 'forceDelete']);
 $router->post('/equipment/{id}/update-status', [EquipmentController::class, 'updateStatusAjax']);
+
+// ============================================
+// PIÈCES JOINTES (ATTACHMENTS)
+// ============================================
+// IMPORTANT : ces routes doivent être APRÈS /equipment/{id}
+$router->post('/equipment/{id}/attachments',                        [EquipmentController::class, 'uploadAttachment']);
+$router->post('/equipment/{id}/attachments/{attachmentId}/delete',  [EquipmentController::class, 'deleteAttachment']);
+$router->get('/equipment/{id}/attachments/{attachmentId}/download', [EquipmentController::class, 'downloadAttachment']);

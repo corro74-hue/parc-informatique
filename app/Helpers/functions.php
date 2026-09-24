@@ -190,3 +190,52 @@ if (!function_exists('dd')) {
         exit(1);
     }
 }
+
+// ============================================
+// NOUVEAU : PERMISSIONS & RÔLES (RBAC)
+// ============================================
+if (!function_exists('can')) {
+    /**
+     * Vérifie si l'utilisateur connecté possède une permission donnée.
+     * Utilisable dans les vues pour masquer les boutons/liens non autorisés.
+     *
+     * Exemple d'utilisation :
+     *   <?php if (can('users.create')): ?>
+     *       <a href="...">Créer un utilisateur</a>
+     *   <?php endif; ?>
+     *
+     * @param string $permission Permission à vérifier (ex: 'users.create', 'equipment.delete')
+     * @return bool True si l'utilisateur a la permission, false sinon
+     */
+    function can(string $permission): bool
+    {
+        static $auth = null;
+        if ($auth === null) {
+            $auth = new \App\Services\Auth\AuthService();
+        }
+        return $auth->can($permission);
+    }
+}
+
+if (!function_exists('has_role')) {
+    /**
+     * Vérifie si l'utilisateur connecté a un rôle donné (par son slug).
+     * Utilisable dans les vues.
+     *
+     * Exemple d'utilisation :
+     *   <?php if (has_role('admin')): ?>
+     *       <span>Section admin</span>
+     *   <?php endif; ?>
+     *
+     * @param string $slug Slug du rôle (ex: 'admin', 'manager', 'viewer')
+     * @return bool True si l'utilisateur a le rôle, false sinon
+     */
+    function has_role(string $slug): bool
+    {
+        static $auth = null;
+        if ($auth === null) {
+            $auth = new \App\Services\Auth\AuthService();
+        }
+        return $auth->hasRole($slug);
+    }
+}

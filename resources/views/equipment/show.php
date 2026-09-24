@@ -33,7 +33,7 @@
             <i class="bi bi-file-earmark-pdf"></i> Fiche PDF
         </a>
 
-        <!-- NOUVEAU : Bouton Historique -->
+        <!-- Bouton Historique -->
         <a href="<?= url('equipment/' . $equipment->id . '/history') ?>"
            class="btn btn-outline-info btn-sm"
            title="Voir l'historique des modifications">
@@ -163,7 +163,7 @@
             </div>
         <?php endif; ?>
 
-        <!-- NOUVEAU : Historique (lien vers la page dédiée) -->
+        <!-- Historique (lien vers la page dédiée) -->
         <div class="card mb-3">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
@@ -183,6 +183,149 @@
                 </a>
             </div>
         </div>
+
+        <!-- ============================================ -->
+        <!-- NOUVEAU : Pièces jointes                     -->
+        <!-- ============================================ -->
+        <div class="card mb-3">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-paperclip text-primary"></i> Pièces jointes
+                    <span class="badge bg-secondary"><?= count($attachments ?? []) ?></span>
+                </h6>
+            </div>
+            <div class="card-body">
+
+                <!-- Liste des pièces jointes existantes -->
+                <?php if (!empty($attachments)): ?>
+                    <div class="row g-2 mb-3">
+                        <?php foreach ($attachments as $att): ?>
+                            <?php
+                            // Choisir une icône selon le type MIME
+                            $icon = 'file-earmark';
+                            $iconColor = '#6c757d';
+                            if (str_starts_with((string) $att['mime_type'], 'image/')) {
+                                $icon = 'file-earmark-image';
+                                $iconColor = '#0d6efd';
+                            } elseif ($att['mime_type'] === 'application/pdf') {
+                                $icon = 'file-earmark-pdf';
+                                $iconColor = '#dc3545';
+                            } elseif (str_contains((string) $att['mime_type'], 'word') || str_contains((string) $att['mime_type'], 'document')) {
+                                $icon = 'file-earmark-word';
+                                $iconColor = '#2b579a';
+                            } elseif (str_contains((string) $att['mime_type'], 'sheet') || str_contains((string) $att['mime_type'], 'excel')) {
+                                $icon = 'file-earmark-excel';
+                                $iconColor = '#217346';
+                            }
+
+                            // Taille lisible
+                            $size = (int) $att['size_bytes'];
+                            if ($size >= 1048576) {
+                                $sizeText = round($size / 1048576, 1) . ' Mo';
+                            } elseif ($size >= 1024) {
+                                $sizeText = round($size / 1024, 0) . ' Ko';
+                            } else {
+                                $sizeText = $size . ' o';
+                            }
+                            ?>
+                            <div class="col-md-6 col-lg-4">
+                                <div class="border rounded p-2 d-flex align-items-center gap-2 h-100">
+                                    <i class="bi bi-<?= $icon ?> flex-shrink-0"
+                                       style="font-size: 1.8rem; color: <?= $iconColor ?>;"></i>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="fw-semibold small text-truncate"
+                                             title="<?= e($att['original_name']) ?>">
+                                            <?= e($att['original_name']) ?>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">
+                                            <?= e($sizeText) ?>
+                                            — <?= e(date('d/m/Y', strtotime($att['created_at']))) ?>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-1 flex-shrink-0">
+                                        <a href="<?= url('equipment/' . $equipment->id . '/attachments/' . (int) $att['id'] . '/download') ?>"
+                                           class="btn btn-sm btn-outline-primary"
+                                           target="_blank"
+                                           title="Voir / Télécharger">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <form method="POST"
+                                              action="<?= url('equipment/' . $equipment->id . '/attachments/' . (int) $att['id'] . '/delete') ?>"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Supprimer la pièce jointe « <?= e($att['original_name']) ?> » ?');">
+                                            <?= csrf_field() ?>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-muted small text-center mb-3">
+                        <i class="bi bi-inbox"></i>
+                        Aucune pièce jointe pour l'instant.
+                    </p>
+                <?php endif; ?>
+
+                <!-- Formulaire d'upload (drag & drop) -->
+                <form method="POST"
+                      action="<?= url('equipment/' . $equipment->id . '/attachments') ?>"
+                      enctype="multipart/form-data"
+                      id="attachment-form">
+                    <?= csrf_field() ?>
+
+                    <div id="attachment-dropzone"
+                         class="border border-2 border-dashed rounded p-4 text-center"
+                         style="border-color: #cbd5e1; cursor: pointer; transition: all 0.2s; background: #f8fafc;">
+                        <i class="bi bi-cloud-arrow-up text-primary" style="font-size: 2.2rem;"></i>
+                        <p class="mb-1 mt-2">
+                            <strong>Glissez-déposez un fichier ici</strong>
+                        </p>
+                        <p class="text-muted small mb-2">
+                            ou cliquez pour parcourir
+                        </p>
+                        <p class="text-muted mb-0" style="font-size: 0.72rem;">
+                            Types acceptés : JPG, PNG, GIF, WEBP, PDF, DOC, DOCX, XLS, XLSX, CSV, TXT — Max 10 Mo
+                        </p>
+
+                        <!-- Input file caché -->
+                        <input type="file"
+                               name="file"
+                               id="attachment-file-input"
+                               class="d-none"
+                               accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                               required>
+                    </div>
+
+                    <!-- Nom du fichier sélectionné -->
+                    <div id="attachment-filename" class="alert alert-info py-2 mt-2 d-none small"></div>
+
+                    <!-- Boutons -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="small text-muted mb-0">Catégorie :</label>
+                            <select name="category" class="form-select form-select-sm" style="width: auto;">
+                                <option value="autre">Autre</option>
+                                <option value="photo">Photo</option>
+                                <option value="facture">Facture</option>
+                                <option value="garantie">Garantie</option>
+                                <option value="document">Document</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-upload"></i> Ajouter la pièce jointe
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+        <!-- ============================================ -->
+        <!-- FIN Pièces jointes                           -->
+        <!-- ============================================ -->
 
     </div>
 
@@ -288,3 +431,18 @@
 
     </div>
 </div>
+
+<!-- Styles pour la dropzone -->
+<style>
+#attachment-dropzone.dragover {
+    border-color: #4f46e5 !important;
+    background: #eef2ff !important;
+    transform: scale(1.01);
+}
+.border-dashed {
+    border-style: dashed !important;
+}
+</style>
+
+<!-- Script JS pour le drag & drop -->
+<script src="<?= url('assets/js/equipment-attachments.js') ?>"></script>

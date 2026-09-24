@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Middleware\PermissionMiddleware;
+
 final class Router
 {
-    /** @var array<string, array<string, callable|array>> */
+    /** @var array<string, array<string, array{handler: callable|array, options: array}>> */
     private array $routes = [
         'GET'    => [],
         'POST'   => [],
@@ -13,29 +15,32 @@ final class Router
         'DELETE' => [],
     ];
 
-    public function get(string $path, callable|array $handler): void
+    public function get(string $path, callable|array $handler, array $options = []): void
     {
-        $this->addRoute('GET', $path, $handler);
+        $this->addRoute('GET', $path, $handler, $options);
     }
 
-    public function post(string $path, callable|array $handler): void
+    public function post(string $path, callable|array $handler, array $options = []): void
     {
-        $this->addRoute('POST', $path, $handler);
+        $this->addRoute('POST', $path, $handler, $options);
     }
 
-    public function put(string $path, callable|array $handler): void
+    public function put(string $path, callable|array $handler, array $options = []): void
     {
-        $this->addRoute('PUT', $path, $handler);
+        $this->addRoute('PUT', $path, $handler, $options);
     }
 
-    public function delete(string $path, callable|array $handler): void
+    public function delete(string $path, callable|array $handler, array $options = []): void
     {
-        $this->addRoute('DELETE', $path, $handler);
+        $this->addRoute('DELETE', $path, $handler, $options);
     }
 
-    private function addRoute(string $method, string $path, callable|array $handler): void
+    private function addRoute(string $method, string $path, callable|array $handler, array $options = []): void
     {
-        $this->routes[$method][$path] = $handler;
+        $this->routes[$method][$path] = [
+            'handler' => $handler,
+            'options' => $options,
+        ];
     }
 
     public function dispatch(Request $request): Response
@@ -47,12 +52,24 @@ final class Router
             return new Response('Méthode non supportée', 405);
         }
 
+        // ============================================
+        // Route exacte (sans paramètre dynamique)
+        // ============================================
         if (isset($this->routes[$method][$uri])) {
-            return $this->invoke($this->routes[$method][$uri], $request, []);
+            $route = $this->routes[$method][$uri];
+            return $this->invokeWithMiddleware(
+                $route['handler'],
+                $request,
+                [],
+                $route['options']
+            );
         }
 
-        foreach ($this->routes[$method] as $route => $handler) {
-            $pattern = $this->compileRoute($route);
+        // ============================================
+        // Routes dynamiques (avec {id}, etc.)
+        // ============================================
+        foreach ($this->routes[$method] as $routePath => $route) {
+            $pattern = $this->compileRoute($routePath);
 
             if (preg_match($pattern, $uri, $matches)) {
                 // Ne garder que les paramètres nommés (pas les index numériques)
@@ -61,7 +78,12 @@ final class Router
                     fn($key) => is_string($key),
                     ARRAY_FILTER_USE_KEY
                 );
-                return $this->invoke($handler, $request, $namedParams);
+                return $this->invokeWithMiddleware(
+                    $route['handler'],
+                    $request,
+                    $namedParams,
+                    $route['options']
+                );
             }
         }
 
@@ -78,10 +100,33 @@ final class Router
         return '#^' . $pattern . '$#';
     }
 
+    /**
+     * Exécute les middlewares (si présents) puis le contrôleur.
+     */
+    private function invokeWithMiddleware(
+        callable|array $handler,
+        Request $request,
+        array $params,
+        array $options
+    ): Response {
+        // ============================================
+        // Middleware : PermissionMiddleware
+        // ============================================
+        if (!empty($options['permission'])) {
+            $permMiddleware = new PermissionMiddleware();
+            $response = $permMiddleware->handle($options['permission']);
+            if ($response instanceof Response) {
+                return $response;
+            }
+        }
+
+        return $this->invoke($handler, $request, $params);
+    }
+
     private function invoke(callable|array $handler, Request $request, array $params): Response
     {
-        // Convertir les paramètres nommés en paramètres positionnels
-        // pour éviter l'erreur "Cannot use positional argument after named argument"
+        // Les paramètres d'URL sont passés tels quels (string).
+        // Le cast en int est fait DANS LES CONTRÔLEURS si nécessaire.
         $positionalParams = array_values($params);
 
         if (is_callable($handler)) {

@@ -312,6 +312,55 @@
                 justify-content: center;
             }
         }
+
+        /* ============================================ */
+        /* NOUVEAU : Ajustements pour le Mode Sombre    */
+        /* ============================================ */
+        [data-bs-theme="dark"] body {
+            background: #0f172a;
+        }
+        [data-bs-theme="dark"] .topbar {
+            background: #1e293b;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        [data-bs-theme="dark"] .topbar h2 {
+            color: #e2e8f0;
+        }
+        [data-bs-theme="dark"] .global-search-input {
+            background: #0f172a;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+        [data-bs-theme="dark"] .global-search-input:focus {
+            background: #1e293b;
+        }
+        [data-bs-theme="dark"] .global-search-results {
+            background: #1e293b;
+            border-color: #334155;
+        }
+        [data-bs-theme="dark"] .gs-header {
+            background: #0f172a;
+            border-color: #334155;
+        }
+        [data-bs-theme="dark"] .gs-item:hover {
+            background: #334155;
+        }
+        [data-bs-theme="dark"] .gs-item-title {
+            color: #e2e8f0;
+        }
+        [data-bs-theme="dark"] .card {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+        [data-bs-theme="dark"] .card-header {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #e2e8f0;
+        }
+        [data-bs-theme="dark"] .border-dashed {
+            border-color: #475569 !important;
+            background: #0f172a !important;
+        }
     </style>
 
     <!-- Configuration JS globale -->
@@ -320,6 +369,14 @@
             csrfToken: '<?= csrf_token() ?>',
             baseUrl:   '<?= rtrim(url(''), '/') ?>'
         };
+    </script>
+
+    <!-- NOUVEAU : Script anti-flash pour le mode sombre -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
     </script>
 </head>
 <body>
@@ -362,10 +419,13 @@
 
             <?php if (in_array('admin', $_SESSION['roles'] ?? [], true)): ?>
                 <div class="nav-section">Administration</div>
-                <a href="<?= url('users') ?>">
+                <a href="<?= url('users') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/users') ? 'active' : '' ?>">
                     <i class="bi bi-person-badge"></i> Utilisateurs
                 </a>
-                <a href="<?= url('audit') ?>">
+                <a href="<?= url('roles') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/roles') ? 'active' : '' ?>">
+                    <i class="bi bi-shield-lock"></i> Rôles et permissions
+                </a>
+                <a href="<?= url('audit') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/audit') ? 'active' : '' ?>">
                     <i class="bi bi-journal-text"></i> Journal d'audit
                 </a>
                 <a href="<?= url('settings') ?>">
@@ -395,6 +455,11 @@
             </div>
 
             <div class="user-menu">
+                <!-- NOUVEAU : Bouton de bascule du thème -->
+                <button id="theme-toggle" class="btn btn-sm btn-light" title="Changer de thème">
+                    <i class="bi bi-moon-stars"></i>
+                </button>
+
                 <div class="user-info text-end">
                     <strong><?= e($_SESSION['full_name'] ?? 'Utilisateur') ?></strong>
                     <small><?= e(implode(', ', $_SESSION['roles'] ?? [])) ?></small>
@@ -445,5 +510,8 @@
     <script src="<?= url('assets/js/equipment-status.js') ?>"></script>
     <script src="<?= url('assets/js/global-search.js') ?>"></script>
     <script src="<?= url('assets/js/equipment-bulk.js') ?>"></script>
+    
+    <!-- NOUVEAU : Script du mode sombre -->
+    <script src="<?= url('assets/js/theme.js') ?>"></script>
 </body>
 </html>

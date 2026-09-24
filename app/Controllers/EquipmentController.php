@@ -144,9 +144,13 @@ final class EquipmentController extends Controller
             return $this->redirect(url('equipment'));
         }
 
+        // Récupérer les pièces jointes de l'équipement
+        $attachments = $this->repo->findAttachments((int) $id);
+
         return $this->view('equipment.show', [
-            'title'     => 'Fiche équipement — ' . $equipment->inventoryNumber,
-            'equipment' => $equipment,
+            'title'       => 'Fiche équipement — ' . $equipment->inventoryNumber,
+            'equipment'   => $equipment,
+            'attachments' => $attachments,
         ], 'app');
     }
 
@@ -868,7 +872,7 @@ final class EquipmentController extends Controller
     }
 
     // ============================================
-    // HISTORIQUE D'UN ÉQUIPEMENT  ← NOUVEAU
+    // HISTORIQUE D'UN ÉQUIPEMENT
     // ============================================
     /**
      * Affiche l'historique complet des modifications d'un équipement.
@@ -893,6 +897,187 @@ final class EquipmentController extends Controller
             'equipment' => $equipment,
             'logs'      => $logs,
         ], 'app');
+    }
+
+    // ============================================
+    // PIÈCES JOINTES (ATTACHMENTS)  ← NOUVEAU
+    // ============================================
+
+    /**
+     * Upload d'un fichier en pièce jointe.
+     */
+    public function uploadAttachment(Request $request, string $id): Response
+    {
+        // ----- 1. Auth + CSRF -----
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+        if ($r = (new CsrfMiddleware())->handle()) return $r;
+
+        // ----- 2. Vérifier l'équipement -----
+        $equipment = $this->service->find((int) $id);
+        if (!$equipment) {
+            flash('error', 'Équipement introuvable.');
+            return $this->redirect(url('equipment'));
+        }
+
+        // ----- 3. Vérifier l'upload -----
+        if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            flash('error', 'Aucun fichier reçu ou erreur d\'upload.');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        $file = $_FILES['file'];
+
+        // ----- 4. Validation -----
+        $maxSize = 10 * 1024 * 1024; // 10 Mo
+        if ($file['size'] > $maxSize) {
+            flash('error', 'Fichier trop volumineux (max 10 Mo).');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+        if (!in_array($ext, $allowedExtensions, true)) {
+            flash('error', 'Extension non autorisée. Autorisées : ' . implode(', ', $allowedExtensions));
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        // ----- 5. Créer le dossier de destination -----
+        $storageDir = dirname(__DIR__, 2) . '/storage/attachments/equipment/' . (int) $id;
+        if (!is_dir($storageDir)) {
+            mkdir($storageDir, 0755, true);
+        }
+
+        // ----- 6. Nom stocké unique -----
+        $storedName = uniqid('', true) . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file['name']);
+        $targetPath = $storageDir . '/' . $storedName;
+
+        // ----- 7. Déplacer le fichier -----
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            flash('error', 'Impossible de sauvegarder le fichier.');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        // ----- 8. Détecter le MIME réel -----
+        $mimeType = mime_content_type($targetPath) ?: 'application/octet-stream';
+
+        // ----- 9. Enregistrer en base -----
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+        $category = (string) $request->input('category', 'autre');
+
+        $this->repo->createAttachment([
+            'equipment_id'  => (int) $id,
+            'original_name' => $file['name'],
+            'stored_name'   => $storedName,
+            'mime_type'     => $mimeType,
+            'size_bytes'    => (int) $file['size'],
+            'category'      => $category,
+            'uploaded_by'   => $userId,
+        ]);
+
+        // ---- AUDIT ----
+        $this->audit->log(
+            'attachment_upload',
+            'equipment',
+            (int) $id,
+            null,
+            [
+                'filename' => $file['name'],
+                'size'     => $file['size'],
+                'mime'     => $mimeType,
+            ],
+            'info'
+        );
+
+        flash('success', 'Pièce jointe ajoutée avec succès.');
+        return $this->redirect(url('equipment/' . $id));
+    }
+
+    /**
+     * Suppression d'une pièce jointe.
+     */
+    public function deleteAttachment(Request $request, string $id, string $attachmentId): Response
+    {
+        // ----- 1. Auth + CSRF -----
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+        if ($r = (new CsrfMiddleware())->handle()) return $r;
+
+        // ----- 2. Récupérer la pièce jointe -----
+        $attachment = $this->repo->findAttachment((int) $attachmentId);
+        if (!$attachment) {
+            flash('error', 'Pièce jointe introuvable.');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        // ----- 3. Vérifier que la pièce jointe appartient bien à cet équipement -----
+        if ((int) $attachment['equipment_id'] !== (int) $id) {
+            flash('error', 'Action non autorisée.');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        // ----- 4. Supprimer le fichier physique -----
+        $filePath = dirname(__DIR__, 2) . '/storage/attachments/equipment/' . (int) $id . '/' . $attachment['stored_name'];
+        if (is_file($filePath)) {
+            @unlink($filePath);
+        }
+
+        // ----- 5. Supprimer en base -----
+        $this->repo->deleteAttachment((int) $attachmentId);
+
+        // ---- AUDIT ----
+        $this->audit->log(
+            'attachment_delete',
+            'equipment',
+            (int) $id,
+            [
+                'filename' => $attachment['original_name'],
+                'size'     => $attachment['size_bytes'],
+            ],
+            null,
+            'warning'
+        );
+
+        flash('success', 'Pièce jointe supprimée.');
+        return $this->redirect(url('equipment/' . $id));
+    }
+
+    /**
+     * Téléchargement sécurisé d'une pièce jointe.
+     */
+    public function downloadAttachment(Request $request, string $id, string $attachmentId): Response
+    {
+        // ----- 1. Auth -----
+        if ($r = (new AuthMiddleware())->handle()) return $r;
+
+        // ----- 2. Récupérer la pièce jointe -----
+        $attachment = $this->repo->findAttachment((int) $attachmentId);
+        if (!$attachment) {
+            flash('error', 'Pièce jointe introuvable.');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        // ----- 3. Vérifier la propriété -----
+        if ((int) $attachment['equipment_id'] !== (int) $id) {
+            flash('error', 'Action non autorisée.');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        // ----- 4. Vérifier que le fichier existe -----
+        $filePath = dirname(__DIR__, 2) . '/storage/attachments/equipment/' . (int) $id . '/' . $attachment['stored_name'];
+        if (!is_file($filePath)) {
+            flash('error', 'Fichier introuvable sur le disque.');
+            return $this->redirect(url('equipment/' . $id));
+        }
+
+        // ----- 5. Envoyer le fichier -----
+        header('Content-Type: ' . $attachment['mime_type']);
+        header('Content-Disposition: inline; filename="' . basename($attachment['original_name']) . '"');
+        header('Content-Length: ' . filesize($filePath));
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        readfile($filePath);
+        exit;
     }
 
     // ============================================

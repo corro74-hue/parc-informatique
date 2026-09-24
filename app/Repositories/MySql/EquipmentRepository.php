@@ -657,6 +657,93 @@ final class EquipmentRepository implements EquipmentRepositoryInterface
     }
 
     // ============================================
+    // PIÈCES JOINTES (ATTACHMENTS)  ← NOUVEAU
+    // ============================================
+
+    /**
+     * Récupère toutes les pièces jointes d'un équipement.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function findAttachments(int $equipmentId): array
+{
+    $stmt = $this->db->prepare(
+        'SELECT a.*,
+                CONCAT(u.first_name, \' \', u.last_name) AS uploaded_by_name
+         FROM equipment_attachments a
+         LEFT JOIN users u ON u.id = a.uploaded_by
+         WHERE a.equipment_id = :equipment_id
+         ORDER BY a.created_at DESC'
+    );
+    $stmt->execute(['equipment_id' => $equipmentId]);
+
+    return $stmt->fetchAll();
+}
+
+    /**
+     * Récupère une pièce jointe par son ID.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findAttachment(int $attachmentId): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT * FROM equipment_attachments WHERE id = :id LIMIT 1'
+        );
+        $stmt->execute(['id' => $attachmentId]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    /**
+     * Enregistre une nouvelle pièce jointe en base.
+     */
+    public function createAttachment(array $data): int
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO equipment_attachments
+                (equipment_id, original_name, stored_name, mime_type, size_bytes, category, uploaded_by, created_at)
+             VALUES
+                (:equipment_id, :original_name, :stored_name, :mime_type, :size_bytes, :category, :uploaded_by, NOW())'
+        );
+
+        $stmt->execute([
+            'equipment_id'  => (int) $data['equipment_id'],
+            'original_name' => $data['original_name'],
+            'stored_name'   => $data['stored_name'],
+            'mime_type'     => $data['mime_type'],
+            'size_bytes'    => (int) $data['size_bytes'],
+            'category'      => $data['category'] ?? null,
+            'uploaded_by'   => $data['uploaded_by'] ?? null,
+        ]);
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Supprime une pièce jointe en base.
+     */
+    public function deleteAttachment(int $attachmentId): bool
+    {
+        $stmt = $this->db->prepare('DELETE FROM equipment_attachments WHERE id = :id');
+        return $stmt->execute(['id' => $attachmentId]);
+    }
+
+    /**
+     * Compte les pièces jointes d'un équipement.
+     */
+    public function countAttachments(int $equipmentId): int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM equipment_attachments WHERE equipment_id = :equipment_id'
+        );
+        $stmt->execute(['equipment_id' => $equipmentId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    // ============================================
     // IMPORT EN MASSE (CSV)
     // ============================================
 
