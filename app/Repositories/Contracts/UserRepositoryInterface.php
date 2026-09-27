@@ -21,95 +21,57 @@ interface UserRepositoryInterface
     public function countRecentFailedAttempts(string $username, int $minutes): int;
 
     // ============================================
-    // NOUVELLES MÉTHODES - CRUD UTILISATEURS
+    // MÉTHODES CRUD UTILISATEURS
     // ============================================
-
-    /**
-     * Récupère tous les utilisateurs avec filtres et pagination.
-     *
-     * @param array $filters ['search' => string, 'role' => string, 'status' => 'active'|'inactive'|'locked']
-     * @param int $page
-     * @param int $perPage
-     * @return array<int, User>
-     */
     public function findAll(array $filters = [], int $page = 1, int $perPage = 20): array;
-
-    /**
-     * Compte le nombre total d'utilisateurs (pour la pagination).
-     */
     public function countAll(array $filters = []): int;
-
-    /**
-     * Crée un nouvel utilisateur.
-     *
-     * @param array $data
-     * @return int L'ID du nouvel utilisateur
-     */
     public function create(array $data): int;
-
-    /**
-     * Met à jour un utilisateur existant.
-     */
     public function update(int $id, array $data): bool;
-
-    /**
-     * Suppression logique (soft delete).
-     */
     public function softDelete(int $id): bool;
-
-    /**
-     * Restaure un utilisateur supprimé.
-     */
     public function restore(int $id): bool;
-
-    /**
-     * Change le mot de passe d'un utilisateur.
-     */
     public function updatePassword(int $id, string $passwordHash, bool $mustChange = false): bool;
-
-    /**
-     * Active ou désactive un compte utilisateur.
-     */
     public function toggleActive(int $id): bool;
 
     // ============================================
     // RÔLES ET PERMISSIONS
     // ============================================
-
-    /**
-     * Récupère la liste de tous les rôles disponibles.
-     */
     public function findAllRoles(): array;
-
-    /**
-     * Récupère la liste de toutes les permissions disponibles.
-     */
     public function findAllPermissions(): array;
-
-    /**
-     * Synchronise les rôles d'un utilisateur (remplace les anciens).
-     *
-     * @param int $userId
-     * @param array<int> $roleIds
-     */
     public function syncRoles(int $userId, array $roleIds): void;
 
     // ============================================
     // HISTORIQUE ET SESSIONS
     // ============================================
-
-    /**
-     * Récupère l'historique des connexions d'un utilisateur.
-     */
     public function getLoginHistory(int $userId, int $limit = 20): array;
-
-    /**
-     * Récupère les sessions actives d'un utilisateur (si table sessions en BDD).
-     */
     public function getActiveSessions(int $userId): array;
+    public function revokeAllSessions(int $userId): void;
+
+    // ============================================
+    // NOUVELLES MÉTHODES - 2FA
+    // ============================================
 
     /**
-     * Révoque toutes les sessions d'un utilisateur (force la déconnexion).
+     * Active la 2FA pour un utilisateur.
      */
-    public function revokeAllSessions(int $userId): void;
+    public function enableTwoFactor(int $userId, string $secret, array $hashedBackupCodes): void;
+
+    /**
+     * Désactive la 2FA pour un utilisateur.
+     */
+    public function disableTwoFactor(int $userId): void;
+
+    /**
+     * Récupère les codes de secours hashés d'un utilisateur.
+     */
+    public function getBackupCodes(int $userId): array;
+
+    /**
+     * Supprime un code de secours après utilisation.
+     */
+    public function removeBackupCode(int $userId, int $index): void;
+
+    /**
+     * Met à jour le secret 2FA d'un utilisateur (sans activer).
+     */
+    public function updateTwoFactorSecret(int $userId, string $secret): void;
 }

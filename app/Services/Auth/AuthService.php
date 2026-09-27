@@ -13,6 +13,10 @@ final class AuthService
     private const LOCK_MINUTES = 15;
     private const ATTEMPT_WINDOW_MINUTES = 15;
 
+    private const TWO_FACTOR_SESSION_KEY = '_2fa_user_id';
+    private const TWO_FACTOR_TIME_KEY    = '_2fa_started_at';
+    private const TWO_FACTOR_TIMEOUT     = 300;
+
     private UserRepositoryInterface $users;
 
     public function __construct(?UserRepositoryInterface $users = null)
@@ -20,14 +24,8 @@ final class AuthService
         $this->users = $users ?? new UserRepository();
     }
 
-    /**
-     * Tentative de connexion
-     *
-     * @return array{success: bool, user?: User, message: string}
-     */
     public function attempt(string $username, string $password, string $ip, string $userAgent): array
     {
-        // 1. Vérifier le rate limiting global (par username)
         $recentFailures = $this->users->countRecentFailedAttempts($username, self::ATTEMPT_WINDOW_MINUTES);
         if ($recentFailures >= self::MAX_ATTEMPTS) {
             $this->users->logLoginAttempt($username, $ip, $userAgent, false);
@@ -37,73 +35,55 @@ final class AuthService
             ];
         }
 
-        // 2. Chercher l'utilisateur
         $user = $this->users->findByUsername($username);
 
         if (!$user) {
             $this->users->logLoginAttempt($username, $ip, $userAgent, false);
-            return [
-                'success' => false,
-                'message' => 'Identifiants invalides.',
-            ];
+            return ['success' => false, 'message' => 'Identifiants invalides.'];
         }
 
-        // 3. Compte actif ?
         if (!$user->isActive) {
             $this->users->logLoginAttempt($username, $ip, $userAgent, false);
-            return [
-                'success' => false,
-                'message' => 'Ce compte est désactivé. Contactez l\'administrateur.',
-            ];
+            return ['success' => false, 'message' => 'Ce compte est désactivé. Contactez l\'administrateur.'];
         }
 
-        // 4. Compte verrouillé ?
         if ($user->isLocked()) {
             $this->users->logLoginAttempt($username, $ip, $userAgent, false);
-            return [
-                'success' => false,
-                'message' => 'Ce compte est temporairement verrouillé. Réessayez plus tard.',
-            ];
+            return ['success' => false, 'message' => 'Ce compte est temporairement verrouillé. Réessayez plus tard.'];
         }
 
-        // 5. Vérifier le mot de passe
         if (!password_verify($password, $user->passwordHash)) {
             $this->users->incrementFailedAttempts($user->id);
             $this->users->logLoginAttempt($username, $ip, $userAgent, false);
 
-            // Verrouiller si trop d'échecs
             $attempts = $this->users->countRecentFailedAttempts($username, self::ATTEMPT_WINDOW_MINUTES);
             if ($attempts >= self::MAX_ATTEMPTS) {
                 $this->users->lockAccount($user->id, self::LOCK_MINUTES);
             }
 
+            return ['success' => false, 'message' => 'Identifiants invalides.'];
+        }
+
+        $this->users->resetFailedAttempts($user->id);
+        $this->users->logLoginAttempt($username, $ip, $userAgent, true);
+
+        $user = $this->users->findById($user->id) ?? $user;
+
+        if ($user->twoFactorEnabled) {
+            $this->startTwoFactorChallenge($user->id);
             return [
-                'success' => false,
-                'message' => 'Identifiants invalides.',
+                'success'      => true,
+                'requires_2fa' => true,
+                'user'         => $user,
+                'message'      => 'Veuillez saisir votre code d\'authentification.',
             ];
         }
 
-        // 6. Connexion réussie
-        $this->users->resetFailedAttempts($user->id);
-        $this->users->updateLastLogin($user->id, $ip);
-        $this->users->logLoginAttempt($username, $ip, $userAgent, true);
-
-        // Recharger l'utilisateur pour avoir les rôles/permissions à jour
-        $user = $this->users->findById($user->id) ?? $user;
-
-        return [
-            'success' => true,
-            'user'    => $user,
-            'message' => 'Connexion réussie.',
-        ];
+        return ['success' => true, 'user' => $user, 'message' => 'Connexion réussie.'];
     }
 
-    /**
-     * Connecte l'utilisateur (stocke en session)
-     */
     public function login(User $user): void
     {
-        // Protection contre la fixation de session
         session_regenerate_id(true);
 
         $_SESSION['user_id']       = $user->id;
@@ -115,13 +95,11 @@ final class AuthService
         $_SESSION['last_activity'] = time();
         $_SESSION['must_change_password'] = $user->mustChangePassword;
 
-        // Rotation du token CSRF
         unset($_SESSION['_csrf_token']);
+        unset($_SESSION[self::TWO_FACTOR_SESSION_KEY]);
+        unset($_SESSION[self::TWO_FACTOR_TIME_KEY]);
     }
 
-    /**
-     * Déconnecte l'utilisateur
-     */
     public function logout(): void
     {
         $_SESSION = [];
@@ -142,29 +120,19 @@ final class AuthService
         session_destroy();
     }
 
-    /**
-     * Vérifie si un utilisateur est connecté
-     */
     public function check(): bool
     {
         return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
     }
 
-    /**
-     * Retourne l'utilisateur connecté
-     */
     public function user(): ?User
     {
         if (!$this->check()) {
             return null;
         }
-
         return $this->users->findById((int) $_SESSION['user_id']);
     }
 
-    /**
-     * Vérifie l'expiration de la session
-     */
     public function checkSessionExpiry(int $lifetime): bool
     {
         if (!isset($_SESSION['last_activity'])) {
@@ -180,9 +148,6 @@ final class AuthService
         return true;
     }
 
-    /**
-     * Vérifie une permission
-     */
     public function can(string $permission): bool
     {
         if (!$this->check()) {
@@ -191,14 +156,56 @@ final class AuthService
         return in_array($permission, $_SESSION['permissions'] ?? [], true);
     }
 
-    /**
-     * Vérifie un rôle
-     */
     public function hasRole(string $slug): bool
     {
         if (!$this->check()) {
             return false;
         }
         return in_array($slug, $_SESSION['roles'] ?? [], true);
+    }
+
+    // ============================================
+    // NOUVELLES MÉTHODES - 2FA
+    // ============================================
+
+    public function startTwoFactorChallenge(int $userId): void
+    {
+        session_regenerate_id(true);
+
+        $_SESSION[self::TWO_FACTOR_SESSION_KEY] = $userId;
+        $_SESSION[self::TWO_FACTOR_TIME_KEY]    = time();
+
+        unset($_SESSION['_csrf_token']);
+    }
+
+    public function isTwoFactorPending(): bool
+    {
+        if (empty($_SESSION[self::TWO_FACTOR_SESSION_KEY])) {
+            return false;
+        }
+
+        $startedAt = $_SESSION[self::TWO_FACTOR_TIME_KEY] ?? 0;
+        if (time() - $startedAt > self::TWO_FACTOR_TIMEOUT) {
+            $this->cancelTwoFactorChallenge();
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getTwoFactorUser(): ?User
+    {
+        if (!$this->isTwoFactorPending()) {
+            return null;
+        }
+
+        $userId = (int) $_SESSION[self::TWO_FACTOR_SESSION_KEY];
+        return $this->users->findById($userId);
+    }
+
+    public function cancelTwoFactorChallenge(): void
+    {
+        unset($_SESSION[self::TWO_FACTOR_SESSION_KEY]);
+        unset($_SESSION[self::TWO_FACTOR_TIME_KEY]);
     }
 }

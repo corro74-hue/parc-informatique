@@ -62,13 +62,14 @@ final class SecurityHeadersMiddleware
         // des styles inline) et 'unsafe-eval' pour Bootstrap (car il utilise eval()).
         // En production stricte, on pourrait durcir cette politique.
         //
-        // CORRECTION : connect-src autorise https://cdn.jsdelivr.net pour les fetch AJAX
-        // de Bootstrap (tooltips, popovers, etc.).
+        // CORRECTIONS APPORTÉES :
+        // - connect-src autorise https://cdn.jsdelivr.net (fetch AJAX de Bootstrap)
+        // - img-src autorise https://api.qrserver.com (QR codes 2FA)
         $csp = "default-src 'self'; " .
                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " .
                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " .
                "font-src 'self' https://cdn.jsdelivr.net data:; " .
-               "img-src 'self' data: blob:; " .
+               "img-src 'self' data: blob: https://api.qrserver.com; " .
                "connect-src 'self' https://cdn.jsdelivr.net; " .
                "frame-ancestors 'self'; " .
                "base-uri 'self'; " .

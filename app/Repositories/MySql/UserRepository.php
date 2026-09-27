@@ -368,7 +368,107 @@ final class UserRepository implements UserRepositoryInterface
             // La table n'existe pas encore, on ignore
         }
     }
+    // ============================================
+    // NOUVELLES MÉTHODES - 2FA (Two-Factor Authentication)
+    // ============================================
 
+    /**
+     * Active la 2FA pour un utilisateur.
+     *
+     * @param int $userId
+     * @param string $secret Secret TOTP (base32)
+     * @param array<int, string> $hashedBackupCodes Codes de secours hashés
+     */
+    public function enableTwoFactor(int $userId, string $secret, array $hashedBackupCodes): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE users
+             SET two_factor_secret = :secret,
+                 two_factor_enabled = 1,
+                 two_factor_backup_codes = :codes,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute([
+            'id'     => $userId,
+            'secret' => $secret,
+            'codes'  => json_encode($hashedBackupCodes),
+        ]);
+    }
+
+    /**
+     * Désactive la 2FA pour un utilisateur.
+     */
+    public function disableTwoFactor(int $userId): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE users
+             SET two_factor_secret = NULL,
+                 two_factor_enabled = 0,
+                 two_factor_backup_codes = NULL,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(['id' => $userId]);
+    }
+
+    /**
+     * Récupère les codes de secours hashés d'un utilisateur.
+     *
+     * @return array<int, string>
+     */
+    public function getBackupCodes(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT two_factor_backup_codes FROM users WHERE id = :id LIMIT 1'
+        );
+        $stmt->execute(['id' => $userId]);
+
+        $json = $stmt->fetchColumn();
+
+        if (!$json) {
+            return [];
+        }
+
+        $codes = json_decode($json, true);
+
+        return is_array($codes) ? $codes : [];
+    }
+
+    /**
+     * Supprime un code de secours après utilisation (usage unique).
+     */
+    public function removeBackupCode(int $userId, int $index): void
+    {
+        $codes = $this->getBackupCodes($userId);
+
+        if (isset($codes[$index])) {
+            unset($codes[$index]);
+            $codes = array_values($codes); // Réindexe le tableau
+
+            $stmt = $this->db->prepare(
+                'UPDATE users SET two_factor_backup_codes = :codes WHERE id = :id'
+            );
+            $stmt->execute([
+                'id'    => $userId,
+                'codes' => json_encode($codes),
+            ]);
+        }
+    }
+
+    /**
+     * Met à jour le secret 2FA d'un utilisateur (sans activer).
+     * Utile pour l'étape de configuration avant validation du premier code.
+     */
+    public function updateTwoFactorSecret(int $userId, string $secret): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE users SET two_factor_secret = :secret, updated_at = NOW() WHERE id = :id'
+        );
+        $stmt->execute(['id' => $userId, 'secret' => $secret]);
+    }
     // ============================================
     // MÉTHODES PRIVÉES
     // ============================================

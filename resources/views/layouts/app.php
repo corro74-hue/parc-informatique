@@ -472,6 +472,34 @@
                         <i class="bi bi-chevron-down"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
+
+                        <!-- NOUVEAU : Lien "Mon profil" -->
+                        <li>
+                            <a href="<?= url('profile') ?>" class="dropdown-item">
+                                <i class="bi bi-person"></i> Mon profil
+                            </a>
+                        </li>
+
+                        <!-- NOUVEAU : Lien "Sécurité" avec badge 2FA -->
+                        <li>
+                            <a href="<?= url('profile/security') ?>" class="dropdown-item d-flex align-items-center">
+                                <i class="bi bi-shield-lock"></i>
+                                <span class="ms-2">Sécurité</span>
+                                <?php if (!empty($_SESSION['user_id'])): ?>
+                                    <?php
+                                    $authForMenu = new \App\Services\Auth\AuthService();
+                                    $currentUser = $authForMenu->user();
+                                    ?>
+                                    <?php if ($currentUser && $currentUser->twoFactorEnabled): ?>
+                                        <span class="badge bg-success ms-auto" style="font-size: 0.6rem;">2FA</span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <!-- Lien "Déconnexion" (existant) -->
                         <li>
                             <form method="POST" action="<?= url('logout') ?>" class="m-0">
                                 <?= csrf_field() ?>
