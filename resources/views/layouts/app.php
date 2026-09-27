@@ -417,7 +417,7 @@
                 <i class="bi bi-bar-chart"></i> Rapports
             </a>
 
-            <?php if (in_array('admin', $_SESSION['roles'] ?? [], true)): ?>
+            <?php if (can('users.view') || can('settings.manage') || has_role('admin')): ?>
                 <div class="nav-section">Administration</div>
                 <a href="<?= url('users') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/users') ? 'active' : '' ?>">
                     <i class="bi bi-person-badge"></i> Utilisateurs
