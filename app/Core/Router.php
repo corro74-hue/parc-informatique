@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Middleware\PermissionMiddleware;
+use App\Middleware\RateLimitMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
 
 final class Router
@@ -78,7 +79,6 @@ final class Router
             $pattern = $this->compileRoute($routePath);
 
             if (preg_match($pattern, $uri, $matches)) {
-                // Ne garder que les paramètres nommés (pas les index numériques)
                 $namedParams = array_filter(
                     $matches,
                     fn($key) => is_string($key),
@@ -115,6 +115,23 @@ final class Router
         array $params,
         array $options
     ): Response {
+        // ============================================
+        // Middleware : RateLimitMiddleware
+        // ============================================
+        if (!empty($options['rate_limit'])) {
+            $rateOptions = is_array($options['rate_limit']) ? $options['rate_limit'] : [];
+            $rateMiddleware = new RateLimitMiddleware();
+            $response = $rateMiddleware->handle(
+                $options['rate_limit_route'] ?? ($request->uri ?? '/'),
+                $rateOptions['max']     ?? 60,
+                $rateOptions['window']  ?? 60,
+                $rateOptions['block']   ?? 300
+            );
+            if ($response instanceof Response) {
+                return $response;
+            }
+        }
+
         // ============================================
         // Middleware : PermissionMiddleware
         // ============================================

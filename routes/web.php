@@ -26,7 +26,11 @@ $router->get('/', function (Request $request) {
 // AUTHENTIFICATION
 // ============================================
 $router->get('/login',    [AuthController::class, 'showLogin']);
-$router->post('/login',   [AuthController::class, 'login']);
+$router->post('/login',   [AuthController::class, 'login'], [
+    // Rate limit : 5 tentatives par 15 min, blocage 15 min en cas de dépassement
+    'rate_limit'       => ['max' => 5, 'window' => 900, 'block' => 900],
+    'rate_limit_route' => '/login',
+]);
 $router->post('/logout',  [AuthController::class, 'logout']);
 $router->get('/logout',   [AuthController::class, 'logout']);
 
@@ -34,14 +38,23 @@ $router->get('/logout',   [AuthController::class, 'logout']);
 // AUTHENTIFICATION 2FA
 // ============================================
 $router->get('/two-factor',          [AuthController::class, 'showTwoFactor']);
-$router->post('/two-factor/verify',  [AuthController::class, 'verifyTwoFactor']);
+$router->post('/two-factor/verify',  [AuthController::class, 'verifyTwoFactor'], [
+    // Rate limit : 5 tentatives par 5 min, blocage 15 min en cas de dépassement
+    'rate_limit'       => ['max' => 5, 'window' => 300, 'block' => 900],
+    'rate_limit_route' => '/two-factor/verify',
+]);
 $router->post('/two-factor/cancel',  [AuthController::class, 'cancelTwoFactor']);
 
 // ============================================
 // UTILISATEURS (Administration)
 // ============================================
 // IMPORTANT : les routes spécifiques doivent être AVANT /users/{id}
-$router->get('/users',                       [UserController::class, 'index'],           ['permission' => 'users.view']);
+$router->get('/users',                       [UserController::class, 'index'],           [
+    'permission'       => 'users.view',
+    // Rate limit : 100 requêtes par minute (anti-scraping)
+    'rate_limit'       => ['max' => 100, 'window' => 60, 'block' => 300],
+    'rate_limit_route' => '/users',
+]);
 $router->get('/users/create',                [UserController::class, 'create'],          ['permission' => 'users.create']);
 
 // Routes POST (création)
@@ -54,7 +67,12 @@ $router->get('/users/{id}/edit',             [UserController::class, 'edit'],   
 // Routes POST avec ID
 $router->post('/users/{id}',                 [UserController::class, 'update'],          ['permission' => 'users.edit']);
 $router->post('/users/{id}/delete',          [UserController::class, 'destroy'],         ['permission' => 'users.delete']);
-$router->post('/users/{id}/reset-password',  [UserController::class, 'resetPassword'],   ['permission' => 'users.edit']);
+$router->post('/users/{id}/reset-password',  [UserController::class, 'resetPassword'],   [
+    'permission'       => 'users.edit',
+    // Rate limit : 3 réinitialisations par heure (protection anti-spam)
+    'rate_limit'       => ['max' => 3, 'window' => 3600, 'block' => 1800],
+    'rate_limit_route' => '/users/reset-password',
+]);
 $router->post('/users/{id}/toggle-active',   [UserController::class, 'toggleActive'],    ['permission' => 'users.edit']);
 
 // ============================================
@@ -64,7 +82,7 @@ $router->get('/profile',                     [UserController::class, 'profile'])
 $router->post('/profile/change-password',    [UserController::class, 'changePassword']);
 
 // ============================================
-// SÉCURITÉ / 2FA (accessible à tous les connectés)  ← NOUVEAU
+// SÉCURITÉ / 2FA (accessible à tous les connectés)
 // ============================================
 $router->get('/profile/security',              [UserController::class, 'security']);
 $router->get('/profile/security/enable',       [UserController::class, 'enableTwoFactor']);
@@ -113,7 +131,12 @@ $router->get('/equipment/bulk/export',        [EquipmentController::class, 'bulk
 
 $router->get('/equipment/import',             [EquipmentController::class, 'importForm'],     ['permission' => 'equipment.import']);
 $router->post('/equipment/import/preview',    [EquipmentController::class, 'importPreview'],  ['permission' => 'equipment.import']);
-$router->post('/equipment/import/store',      [EquipmentController::class, 'importStore'],    ['permission' => 'equipment.import']);
+$router->post('/equipment/import/store',      [EquipmentController::class, 'importStore'],    [
+    'permission'       => 'equipment.import',
+    // Rate limit : 10 imports par heure (anti-spam)
+    'rate_limit'       => ['max' => 10, 'window' => 3600, 'block' => 1800],
+    'rate_limit_route' => '/equipment/import',
+]);
 $router->get('/equipment/import/template',    [EquipmentController::class, 'importTemplate'], ['permission' => 'equipment.import']);
 
 $router->post('/equipment',                   [EquipmentController::class, 'store'],          ['permission' => 'equipment.create']);
