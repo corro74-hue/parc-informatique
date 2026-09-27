@@ -528,6 +528,38 @@
                 </div>
             <?php endif; ?>
 
+            <!-- ============================================ -->
+            <!-- NOUVEAU : Flash "warning"                    -->
+            <!-- ============================================ -->
+            <?php if ($msg = flash('warning')): ?>
+                <div class="alert alert-warning alert-dismissible fade show">
+                    <i class="bi bi-exclamation-triangle-fill"></i> <?= e($msg) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+
+            <!-- ============================================ -->
+            <!-- NOUVEAU : Avertissement d'expiration du mot de passe -->
+            <!-- ============================================ -->
+            <?php if (!empty($_SESSION['_password_expiry_warning'])): ?>
+                <?php $daysLeft = (int) $_SESSION['_password_expiry_warning']; ?>
+                <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center">
+                    <i class="bi bi-shield-exclamation fs-4 me-2"></i>
+                    <div class="flex-grow-1">
+                        <strong>Votre mot de passe expire bientôt</strong>
+                        <p class="mb-0 small">
+                            Il vous reste <strong><?= $daysLeft ?> jour<?= $daysLeft > 1 ? 's' : '' ?></strong>
+                            avant que votre mot de passe n'expire.
+                            <a href="<?= url('profile') ?>" class="alert-link">
+                                Changez-le maintenant <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php unset($_SESSION['_password_expiry_warning']); ?>
+            <?php endif; ?>
+
             <?= $content ?>
         </div>
     </div>

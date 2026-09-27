@@ -100,7 +100,7 @@ final class UserRepository implements UserRepositoryInterface
     }
 
     // ============================================
-    // NOUVELLES MÉTHODES - CRUD UTILISATEURS
+    // CRUD UTILISATEURS
     // ============================================
 
     public function findAll(array $filters = [], int $page = 1, int $perPage = 20): array
@@ -108,13 +108,11 @@ final class UserRepository implements UserRepositoryInterface
         $where  = ['deleted_at IS NULL'];
         $params = [];
 
-        // Filtre : recherche (username, email, first_name, last_name)
         if (!empty($filters['search'])) {
             $where[] = '(username LIKE :search OR email LIKE :search OR first_name LIKE :search OR last_name LIKE :search)';
             $params['search'] = '%' . $filters['search'] . '%';
         }
 
-        // Filtre : rôle
         if (!empty($filters['role'])) {
             $where[] = 'EXISTS (
                 SELECT 1 FROM user_roles ur
@@ -124,7 +122,6 @@ final class UserRepository implements UserRepositoryInterface
             $params['role'] = $filters['role'];
         }
 
-        // Filtre : statut
         if (!empty($filters['status'])) {
             if ($filters['status'] === 'active') {
                 $where[] = 'is_active = 1';
@@ -305,11 +302,9 @@ final class UserRepository implements UserRepositoryInterface
 
     public function syncRoles(int $userId, array $roleIds): void
     {
-        // Supprime tous les rôles existants
         $stmt = $this->db->prepare('DELETE FROM user_roles WHERE user_id = :user_id');
         $stmt->execute(['user_id' => $userId]);
 
-        // Insère les nouveaux rôles
         if (!empty($roleIds)) {
             $stmt = $this->db->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)');
 
@@ -346,7 +341,6 @@ final class UserRepository implements UserRepositoryInterface
 
     public function getActiveSessions(int $userId): array
     {
-        // Vérifie si la table sessions existe
         try {
             $stmt = $this->db->prepare(
                 'SELECT * FROM sessions WHERE user_id = :user_id ORDER BY last_activity DESC'
@@ -354,7 +348,6 @@ final class UserRepository implements UserRepositoryInterface
             $stmt->execute(['user_id' => $userId]);
             return $stmt->fetchAll();
         } catch (\PDOException $e) {
-            // La table n'existe pas encore, on retourne un tableau vide
             return [];
         }
     }
@@ -365,20 +358,14 @@ final class UserRepository implements UserRepositoryInterface
             $stmt = $this->db->prepare('DELETE FROM sessions WHERE user_id = :user_id');
             $stmt->execute(['user_id' => $userId]);
         } catch (\PDOException $e) {
-            // La table n'existe pas encore, on ignore
+            // Ignore
         }
     }
+
     // ============================================
-    // NOUVELLES MÉTHODES - 2FA (Two-Factor Authentication)
+    // 2FA (Two-Factor Authentication)
     // ============================================
 
-    /**
-     * Active la 2FA pour un utilisateur.
-     *
-     * @param int $userId
-     * @param string $secret Secret TOTP (base32)
-     * @param array<int, string> $hashedBackupCodes Codes de secours hashés
-     */
     public function enableTwoFactor(int $userId, string $secret, array $hashedBackupCodes): void
     {
         $stmt = $this->db->prepare(
@@ -397,9 +384,6 @@ final class UserRepository implements UserRepositoryInterface
         ]);
     }
 
-    /**
-     * Désactive la 2FA pour un utilisateur.
-     */
     public function disableTwoFactor(int $userId): void
     {
         $stmt = $this->db->prepare(
@@ -414,11 +398,6 @@ final class UserRepository implements UserRepositoryInterface
         $stmt->execute(['id' => $userId]);
     }
 
-    /**
-     * Récupère les codes de secours hashés d'un utilisateur.
-     *
-     * @return array<int, string>
-     */
     public function getBackupCodes(int $userId): array
     {
         $stmt = $this->db->prepare(
@@ -437,16 +416,13 @@ final class UserRepository implements UserRepositoryInterface
         return is_array($codes) ? $codes : [];
     }
 
-    /**
-     * Supprime un code de secours après utilisation (usage unique).
-     */
     public function removeBackupCode(int $userId, int $index): void
     {
         $codes = $this->getBackupCodes($userId);
 
         if (isset($codes[$index])) {
             unset($codes[$index]);
-            $codes = array_values($codes); // Réindexe le tableau
+            $codes = array_values($codes);
 
             $stmt = $this->db->prepare(
                 'UPDATE users SET two_factor_backup_codes = :codes WHERE id = :id'
@@ -458,10 +434,6 @@ final class UserRepository implements UserRepositoryInterface
         }
     }
 
-    /**
-     * Met à jour le secret 2FA d'un utilisateur (sans activer).
-     * Utile pour l'étape de configuration avant validation du premier code.
-     */
     public function updateTwoFactorSecret(int $userId, string $secret): void
     {
         $stmt = $this->db->prepare(
@@ -469,6 +441,82 @@ final class UserRepository implements UserRepositoryInterface
         );
         $stmt->execute(['id' => $userId, 'secret' => $secret]);
     }
+
+    // ============================================
+    // NOUVELLES MÉTHODES - POLITIQUE DE MOT DE PASSE
+    // ============================================
+
+    /**
+     * Met à jour la date de dernier changement de mot de passe.
+     * Initialise aussi password_expires_at (+90 jours).
+     */
+    public function updatePasswordChangedAt(int $userId): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE users
+             SET password_changed_at = NOW(),
+                 password_expires_at = DATE_ADD(NOW(), INTERVAL 90 DAY),
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+        $stmt->execute(['id' => $userId]);
+    }
+
+    /**
+     * Récupère l'historique des mots de passe d'un utilisateur.
+     *
+     * @return array<int, string> Tableau de hashs (du plus récent au plus ancien)
+     */
+    public function getPasswordHistory(int $userId, int $limit = 5): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT password_hash FROM password_history
+             WHERE user_id = :user_id
+             ORDER BY created_at DESC
+             LIMIT :limit'
+        );
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Ajoute un mot de passe à l'historique.
+     * Nettoie automatiquement pour ne garder que les 5 derniers.
+     */
+    public function addPasswordToHistory(int $userId, string $passwordHash): void
+    {
+        // Insertion du nouveau hash
+        $stmt = $this->db->prepare(
+            'INSERT INTO password_history (user_id, password_hash, created_at)
+             VALUES (:user_id, :password_hash, NOW())'
+        );
+        $stmt->execute([
+            'user_id'       => $userId,
+            'password_hash' => $passwordHash,
+        ]);
+
+        // Nettoyage : ne garde que les 5 derniers
+        $stmt = $this->db->prepare(
+            'DELETE FROM password_history
+             WHERE user_id = :user_id
+               AND id NOT IN (
+                   SELECT id FROM (
+                       SELECT id FROM password_history
+                       WHERE user_id = :user_id2
+                       ORDER BY created_at DESC
+                       LIMIT 5
+                   ) AS recent
+               )'
+        );
+        $stmt->execute([
+            'user_id'  => $userId,
+            'user_id2' => $userId,
+        ]);
+    }
+
     // ============================================
     // MÉTHODES PRIVÉES
     // ============================================

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\MySql\UserRepository;
 use App\Exceptions\ValidationException;
+use App\Services\Security\PasswordPolicyService;
 
 final class UserService
 {
@@ -54,6 +55,10 @@ final class UserService
         if (!empty($roleIds)) {
             $this->users->syncRoles($userId, $roleIds);
         }
+
+        // 5. Enregistrer le mot de passe initial dans l'historique + tracker la date
+        $this->users->addPasswordToHistory($userId, $userData['password_hash']);
+        $this->users->updatePasswordChangedAt($userId);
 
         return $userId;
     }
@@ -185,13 +190,45 @@ final class UserService
 
     /**
      * Change le mot de passe d'un utilisateur.
+     * Applique la politique de mot de passe + historique.
+     *
+     * @throws ValidationException
      */
     public function changePassword(int $id, string $plainPassword, bool $mustChange = false): bool
     {
-        // Validation de la force du mot de passe
-        $this->validatePasswordStrength($plainPassword);
+        // ============================================
+        // NOUVEAU : Validation via PasswordPolicyService
+        // ============================================
+        $policy = new PasswordPolicyService();
+        $validation = $policy->validate($plainPassword, $id);
 
-        return $this->users->updatePassword($id, $this->hashPassword($plainPassword), $mustChange);
+        if (!$validation['valid']) {
+            throw new ValidationException('Mot de passe non conforme', $validation['errors']);
+        }
+
+        // ============================================
+        // NOUVEAU : Ajouter l'ancien hash à l'historique
+        // ============================================
+        $user = $this->users->findById($id);
+        if ($user) {
+            $this->users->addPasswordToHistory($id, $user->passwordHash);
+        }
+
+        // ============================================
+        // Mise à jour du mot de passe
+        // ============================================
+        $newHash = $this->hashPassword($plainPassword);
+        $result = $this->users->updatePassword($id, $newHash, $mustChange);
+
+        // ============================================
+        // NOUVEAU : Ajouter le nouveau hash à l'historique + tracker la date
+        // ============================================
+        if ($result) {
+            $this->users->addPasswordToHistory($id, $newHash);
+            $this->users->updatePasswordChangedAt($id);
+        }
+
+        return $result;
     }
 
     /**

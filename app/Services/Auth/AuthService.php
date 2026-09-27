@@ -98,6 +98,13 @@ final class AuthService
         unset($_SESSION['_csrf_token']);
         unset($_SESSION[self::TWO_FACTOR_SESSION_KEY]);
         unset($_SESSION[self::TWO_FACTOR_TIME_KEY]);
+
+        // ============================================
+        // NOUVEAU : Initialiser password_changed_at si NULL (1ère connexion)
+        // ============================================
+        if ($user->passwordChangedAt === null) {
+            $this->users->updatePasswordChangedAt($user->id);
+        }
     }
 
     public function logout(): void
@@ -165,7 +172,7 @@ final class AuthService
     }
 
     // ============================================
-    // NOUVELLES MÉTHODES - 2FA
+    // MÉTHODES 2FA
     // ============================================
 
     public function startTwoFactorChallenge(int $userId): void
@@ -207,5 +214,18 @@ final class AuthService
     {
         unset($_SESSION[self::TWO_FACTOR_SESSION_KEY]);
         unset($_SESSION[self::TWO_FACTOR_TIME_KEY]);
+    }
+
+    // ============================================
+    // NOUVEAU : Politique de mot de passe
+    // ============================================
+
+    /**
+     * Met à jour la date de dernier changement de mot de passe.
+     * Utilisé pour tracker l'expiration du mot de passe.
+     */
+    public function updatePasswordChangedAt(int $userId): void
+    {
+        $this->users->updatePasswordChangedAt($userId);
     }
 }

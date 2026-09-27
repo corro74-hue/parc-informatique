@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Middleware\PasswordPolicyMiddleware;
 use App\Middleware\PermissionMiddleware;
 use App\Middleware\RateLimitMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
@@ -48,9 +49,19 @@ final class Router
     public function dispatch(Request $request): Response
     {
         // ============================================
-        // Headers de sécurité globaux (appliqués à TOUTES les réponses)
+        // Middleware 1 : Headers de sécurité (global)
         // ============================================
         (new SecurityHeadersMiddleware())->handle();
+
+        // ============================================
+        // Middleware 2 : Politique de mot de passe (global)
+        // ============================================
+        // Vérifie si le mot de passe de l'utilisateur connecté a expiré.
+        // Le middleware gère lui-même les exclusions (login, logout, 2FA, profile).
+        $pwdResponse = (new PasswordPolicyMiddleware())->handle();
+        if ($pwdResponse instanceof Response) {
+            return $pwdResponse;
+        }
 
         $method = $request->method;
         $uri    = $request->uri;

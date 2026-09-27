@@ -47,7 +47,7 @@ interface UserRepositoryInterface
     public function revokeAllSessions(int $userId): void;
 
     // ============================================
-    // NOUVELLES MÉTHODES - 2FA
+    // 2FA
     // ============================================
 
     /**
@@ -74,4 +74,27 @@ interface UserRepositoryInterface
      * Met à jour le secret 2FA d'un utilisateur (sans activer).
      */
     public function updateTwoFactorSecret(int $userId, string $secret): void;
+
+    // ============================================
+    // NOUVELLES MÉTHODES - POLITIQUE DE MOT DE PASSE
+    // ============================================
+
+    /**
+     * Met à jour la date de dernier changement de mot de passe.
+     * Initialise aussi password_expires_at (+90 jours).
+     */
+    public function updatePasswordChangedAt(int $userId): void;
+
+    /**
+     * Récupère l'historique des mots de passe d'un utilisateur.
+     *
+     * @return array<int, string> Tableau de hashs (du plus récent au plus ancien)
+     */
+    public function getPasswordHistory(int $userId, int $limit = 5): array;
+
+    /**
+     * Ajoute un mot de passe à l'historique.
+     * Nettoie automatiquement pour ne garder que les 5 derniers.
+     */
+    public function addPasswordToHistory(int $userId, string $passwordHash): void;
 }

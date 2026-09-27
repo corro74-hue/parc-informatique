@@ -16,8 +16,19 @@ final class User
         public readonly ?string $avatar,
         public readonly bool $isActive,
         public readonly bool $mustChangePassword,
+        // ============================================
+        // NOUVEAU : Politique de mot de passe
+        // ============================================
+        public readonly ?string $passwordChangedAt,
+        public readonly ?string $passwordExpiresAt,
+        // ============================================
+        // 2FA
+        // ============================================
         public readonly ?string $twoFactorSecret,
         public readonly bool $twoFactorEnabled,
+        // ============================================
+        // Autres propriétés
+        // ============================================
         public readonly ?string $lastLoginAt,
         public readonly int $failedAttempts,
         public readonly ?string $lockedUntil,
@@ -40,8 +51,19 @@ final class User
             avatar:               $data['avatar'] ?? null,
             isActive:             (bool) $data['is_active'],
             mustChangePassword:   (bool) $data['must_change_password'],
+            // ============================================
+            // NOUVEAU : Politique de mot de passe
+            // ============================================
+            passwordChangedAt:    $data['password_changed_at'] ?? null,
+            passwordExpiresAt:    $data['password_expires_at'] ?? null,
+            // ============================================
+            // 2FA
+            // ============================================
             twoFactorSecret:      $data['two_factor_secret'] ?? null,
             twoFactorEnabled:     (bool) ($data['two_factor_enabled'] ?? false),
+            // ============================================
+            // Autres propriétés
+            // ============================================
             lastLoginAt:          $data['last_login_at'] ?? null,
             failedAttempts:       (int) ($data['failed_attempts'] ?? 0),
             lockedUntil:          $data['locked_until'] ?? null,
