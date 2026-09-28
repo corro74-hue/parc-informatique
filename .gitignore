@@ -19,3 +19,6 @@
 # Fichiers système
 .DS_Store
 Thumbs.db
+
+# Sauvegardes ZIP
+*.zip
