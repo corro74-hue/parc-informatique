@@ -102,6 +102,23 @@ $router->post('/roles/{id}',                 [RoleController::class, 'update'], 
 $router->post('/roles/{id}/delete',          [RoleController::class, 'destroy'],         ['permission' => 'settings.manage']);
 
 // ============================================
+// ADMINISTRATION — BASE DE DONNÉES  ← NOUVEAU
+// ============================================
+// IMPORTANT : les routes spécifiques doivent être AVANT /admin/database
+$router->get('/admin/database',                            [\App\Controllers\Admin\DatabaseController::class, 'index'],   ['permission' => 'settings.manage']);
+$router->get('/admin/database/health',                     [\App\Controllers\Admin\DatabaseController::class, 'health'],  ['permission' => 'settings.manage']);
+
+// Actions POST (création, suppression, nettoyage)
+$router->post('/admin/database/backup',                    [\App\Controllers\Admin\DatabaseController::class, 'createBackup'],   ['permission' => 'settings.manage']);
+$router->post('/admin/database/clean',                     [\App\Controllers\Admin\DatabaseController::class, 'cleanBackups'],   ['permission' => 'settings.manage']);
+$router->post('/admin/database/check',                     [\App\Controllers\Admin\DatabaseController::class, 'checkIntegrity'], ['permission' => 'settings.manage']);
+$router->post('/admin/database/optimize',                  [\App\Controllers\Admin\DatabaseController::class, 'optimize'],       ['permission' => 'settings.manage']);
+
+// Routes avec ID dynamique (À LA FIN)
+$router->get('/admin/database/backup/{id}/download',       [\App\Controllers\Admin\DatabaseController::class, 'downloadBackup'], ['permission' => 'settings.manage']);
+$router->post('/admin/database/backup/{id}/delete',        [\App\Controllers\Admin\DatabaseController::class, 'deleteBackup'],   ['permission' => 'settings.manage']);
+
+// ============================================
 // DASHBOARD (protégé - accessible à tous les connectés)
 // ============================================
 $router->get('/dashboard', [DashboardController::class, 'index']);
