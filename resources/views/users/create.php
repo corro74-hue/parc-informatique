@@ -82,31 +82,58 @@
                                    maxlength="180">
                         </div>
 
-                        <div class="col-md-6">
+                        <!-- NOUVEAU : Mot de passe avec générateur -->
+                        <div class="col-12">
                             <label class="form-label">
                                 Mot de passe <span class="text-danger">*</span>
                             </label>
-                            <input type="password"
-                                   name="password"
-                                   class="form-control"
-                                   required
-                                   minlength="10"
-                                   autocomplete="new-password">
+                            <div class="input-group">
+                                <input type="password"
+                                       name="password"
+                                       id="password-input"
+                                       class="form-control"
+                                       required
+                                       minlength="12"
+                                       autocomplete="new-password"
+                                       placeholder="Saisissez ou générez un mot de passe">
+                                <button type="button"
+                                        class="btn btn-outline-primary"
+                                        id="generate-password-btn"
+                                        title="Générer un mot de passe fort">
+                                    <i class="bi bi-magic"></i> Générer
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-secondary d-none"
+                                        id="copy-password-btn"
+                                        title="Copier le mot de passe">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-secondary d-none"
+                                        id="regenerate-password-btn"
+                                        title="Régénérer un autre mot de passe">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
                             <small class="text-muted">
-                                Min. 10 caractères, avec majuscule, minuscule, chiffre et caractère spécial.
+                                Min. 12 caractères, avec majuscule, minuscule, chiffre et caractère spécial.
+                                <strong>Cliquez sur "Générer" pour créer un mot de passe fort automatiquement.</strong>
                             </small>
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label d-block">&nbsp;</label>
+                        <div class="col-12">
                             <div class="form-check">
                                 <input type="checkbox"
                                        name="must_change_password"
                                        id="must_change_password"
                                        class="form-check-input"
-                                       value="1">
+                                       value="1"
+                                       checked>
                                 <label class="form-check-label" for="must_change_password">
                                     L'utilisateur devra changer son mot de passe à la 1ère connexion
+                                    <small class="text-muted d-block">
+                                        (Recommandé : le mot de passe sera envoyé par email et devra être changé)
+                                    </small>
                                 </label>
                             </div>
                         </div>
@@ -228,5 +255,24 @@
         </div>
     </div>
 </form>
+
+<!-- NOUVEAU : Script du générateur de mot de passe -->
+<script src="<?= url('assets/js/password-generator.js') ?>"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        window.initPasswordGenerator(
+            'password-input',
+            'generate-password-btn',
+            'copy-password-btn',
+            'regenerate-password-btn'
+        );
+
+        // Afficher les boutons Copier/Régénérer après la 1ère génération
+        document.getElementById('generate-password-btn')?.addEventListener('click', function() {
+            document.getElementById('copy-password-btn')?.classList.remove('d-none');
+            document.getElementById('regenerate-password-btn')?.classList.remove('d-none');
+        });
+    });
+</script>
 
 <?php unset($_SESSION['_old']); ?>

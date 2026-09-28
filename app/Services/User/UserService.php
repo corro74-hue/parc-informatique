@@ -24,12 +24,6 @@ final class UserService
 
     /**
      * Crée un nouvel utilisateur.
-     *
-     * @param array $data Données du formulaire
-     * @param string $plainPassword Mot de passe en clair
-     * @param array<int> $roleIds IDs des rôles à assigner
-     * @return int L'ID du nouvel utilisateur
-     * @throws ValidationException
      */
     public function create(array $data, string $plainPassword, array $roleIds = []): int
     {
@@ -60,6 +54,28 @@ final class UserService
         $this->users->addPasswordToHistory($userId, $userData['password_hash']);
         $this->users->updatePasswordChangedAt($userId);
 
+        // ============================================
+        // 6. NOUVEAU : Envoyer l'email de bienvenue
+        // ============================================
+        try {
+            $mailService = new \App\Services\Mail\MailService();
+            $mailService->sendTemplate(
+                $userData['email'],
+                'Bienvenue sur ' . config('app.name', 'Parc Info') . ' — Vos identifiants',
+                'emails.welcome',
+                [
+                    'appName'   => config('app.name', 'Parc Info'),
+                    'firstName' => $userData['first_name'],
+                    'username'  => $userData['username'],
+                    'password'  => $plainPassword,
+                    'appUrl'    => rtrim((string) env('APP_URL', 'http://localhost'), '/'),
+                    'loginUrl'  => url('login'),
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log('Erreur envoi email bienvenue : ' . $e->getMessage());
+        }
+
         return $userId;
     }
 
@@ -74,16 +90,13 @@ final class UserService
      */
     public function update(int $id, array $data, array $roleIds = []): bool
     {
-        // 1. Vérifier que l'utilisateur existe
         $user = $this->users->findById($id);
         if (!$user) {
             throw new ValidationException('Utilisateur introuvable.');
         }
 
-        // 2. Validation
         $this->validate($data, null, $id);
 
-        // 3. Préparation des données
         $updateData = [
             'username'             => trim($data['username']),
             'email'                => trim(strtolower($data['email'])),
@@ -94,10 +107,8 @@ final class UserService
             'must_change_password' => !empty($data['must_change_password']) ? 1 : 0,
         ];
 
-        // 4. Mise à jour
         $updated = $this->users->update($id, $updateData);
 
-        // 5. Synchronisation des rôles
         $this->users->syncRoles($id, $roleIds);
 
         return $updated;
@@ -107,16 +118,8 @@ final class UserService
     // SUPPRESSION / RESTAURATION
     // ============================================
 
-    /**
-     * Vérifie si un utilisateur peut être supprimé.
-     *
-     * @param int $targetId ID de l'utilisateur à supprimer
-     * @param int $currentUserId ID de l'utilisateur qui effectue l'action
-     * @return array{allowed: bool, reason: ?string}
-     */
     public function canDelete(int $targetId, int $currentUserId): array
     {
-        // Protection : on ne peut pas se supprimer soi-même
         if ($targetId === $currentUserId) {
             return [
                 'allowed' => false,
@@ -124,7 +127,6 @@ final class UserService
             ];
         }
 
-        // Protection : on ne peut pas supprimer le dernier admin
         if ($this->isLastAdmin($targetId)) {
             return [
                 'allowed' => false,
@@ -135,16 +137,8 @@ final class UserService
         return ['allowed' => true, 'reason' => null];
     }
 
-    /**
-     * Supprime un utilisateur (soft delete).
-     *
-     * @param int $id ID de l'utilisateur à supprimer
-     * @param int $currentUserId ID de l'utilisateur qui effectue l'action (pour éviter l'auto-suppression)
-     * @throws ValidationException
-     */
     public function delete(int $id, int $currentUserId): bool
     {
-        // Vérification centralisée
         $canDelete = $this->canDelete($id, $currentUserId);
         if (!$canDelete['allowed']) {
             throw new ValidationException($canDelete['reason']);
@@ -153,17 +147,11 @@ final class UserService
         return $this->users->softDelete($id);
     }
 
-    /**
-     * Restaure un utilisateur supprimé.
-     */
     public function restore(int $id): bool
     {
         return $this->users->restore($id);
     }
 
-    /**
-     * Vérifie si un utilisateur est le dernier admin actif.
-     */
     private function isLastAdmin(int $userId): bool
     {
         $user = $this->users->findById($userId);
@@ -171,7 +159,6 @@ final class UserService
             return false;
         }
 
-        // Compter les autres admins actifs
         $allUsers = $this->users->findAll(['role' => 'admin', 'status' => 'active'], 1, 1000);
         $adminCount = 0;
 
@@ -188,17 +175,8 @@ final class UserService
     // MOTS DE PASSE
     // ============================================
 
-    /**
-     * Change le mot de passe d'un utilisateur.
-     * Applique la politique de mot de passe + historique.
-     *
-     * @throws ValidationException
-     */
     public function changePassword(int $id, string $plainPassword, bool $mustChange = false): bool
     {
-        // ============================================
-        // NOUVEAU : Validation via PasswordPolicyService
-        // ============================================
         $policy = new PasswordPolicyService();
         $validation = $policy->validate($plainPassword, $id);
 
@@ -206,23 +184,14 @@ final class UserService
             throw new ValidationException('Mot de passe non conforme', $validation['errors']);
         }
 
-        // ============================================
-        // NOUVEAU : Ajouter l'ancien hash à l'historique
-        // ============================================
         $user = $this->users->findById($id);
         if ($user) {
             $this->users->addPasswordToHistory($id, $user->passwordHash);
         }
 
-        // ============================================
-        // Mise à jour du mot de passe
-        // ============================================
         $newHash = $this->hashPassword($plainPassword);
         $result = $this->users->updatePassword($id, $newHash, $mustChange);
 
-        // ============================================
-        // NOUVEAU : Ajouter le nouveau hash à l'historique + tracker la date
-        // ============================================
         if ($result) {
             $this->users->addPasswordToHistory($id, $newHash);
             $this->users->updatePasswordChangedAt($id);
@@ -233,22 +202,59 @@ final class UserService
 
     /**
      * Réinitialise le mot de passe d'un utilisateur (par un admin).
-     * Génère un mot de passe temporaire aléatoire.
+     * Génère un mot de passe temporaire ET l'envoie par email.
      *
-     * @return string Le mot de passe temporaire en clair (à communiquer à l'utilisateur)
+     * @return array{password: string, email_sent: bool}
+     * @throws ValidationException
      */
-    public function resetPassword(int $id): string
+    public function resetPassword(int $id): array
     {
+        // 1. Vérifier que l'utilisateur existe
+        $user = $this->users->findById($id);
+        if (!$user) {
+            throw new ValidationException('Utilisateur introuvable.');
+        }
+
+        // 2. Générer un mot de passe temporaire
         $temporaryPassword = $this->generateTemporaryPassword();
+        $newHash = $this->hashPassword($temporaryPassword);
 
-        $this->users->updatePassword($id, $this->hashPassword($temporaryPassword), true);
+        // 3. Mettre à jour en BDD (avec must_change_password = true)
+        $this->users->updatePassword($id, $newHash, true);
 
-        return $temporaryPassword;
+        // 4. Ajouter le nouveau hash à l'historique + tracker la date
+        $this->users->addPasswordToHistory($id, $newHash);
+        $this->users->updatePasswordChangedAt($id);
+
+        // ============================================
+        // 5. NOUVEAU : Envoyer l'email de réinitialisation
+        // ============================================
+        $emailSent = false;
+        try {
+            $mailService = new \App\Services\Mail\MailService();
+            $emailSent = $mailService->sendTemplate(
+                $user->email,
+                'Votre mot de passe a été réinitialisé — ' . config('app.name', 'Parc Info'),
+                'emails.password-reset',
+                [
+                    'appName'    => config('app.name', 'Parc Info'),
+                    'firstName'  => $user->firstName,
+                    'username'   => $user->username,
+                    'password'   => $temporaryPassword,
+                    'appUrl'     => rtrim((string) env('APP_URL', 'http://localhost'), '/'),
+                    'loginUrl'   => url('login'),
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log('Erreur envoi email reset password : ' . $e->getMessage());
+        }
+
+        return [
+            'password'   => $temporaryPassword,
+            'email_sent' => $emailSent,
+        ];
     }
 
-    /**
-     * Génère un mot de passe temporaire aléatoire (12 caractères).
-     */
     private function generateTemporaryPassword(): string
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
@@ -261,9 +267,6 @@ final class UserService
         return $password;
     }
 
-    /**
-     * Hache un mot de passe avec Argon2id.
-     */
     private function hashPassword(string $plainPassword): string
     {
         return password_hash($plainPassword, PASSWORD_ARGON2ID, [
@@ -277,17 +280,10 @@ final class UserService
     // VALIDATION
     // ============================================
 
-    /**
-     * Valide les données d'un utilisateur.
-     *
-     * @param int|null $excludeId ID à exclure de la vérification d'unicité (pour l'édition)
-     * @throws ValidationException
-     */
     private function validate(array $data, ?string $plainPassword, ?int $excludeId): void
     {
         $errors = [];
 
-        // Username
         if (empty($data['username'])) {
             $errors[] = 'Le nom d\'utilisateur est requis.';
         } elseif (strlen($data['username']) < 3) {
@@ -303,7 +299,6 @@ final class UserService
             }
         }
 
-        // Email
         if (empty($data['email'])) {
             $errors[] = 'L\'email est requis.';
         } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -315,17 +310,14 @@ final class UserService
             }
         }
 
-        // First name
         if (empty($data['first_name'])) {
             $errors[] = 'Le prénom est requis.';
         }
 
-        // Last name
         if (empty($data['last_name'])) {
             $errors[] = 'Le nom est requis.';
         }
 
-        // Mot de passe (uniquement à la création)
         if ($plainPassword !== null) {
             $this->validatePasswordStrength($plainPassword, $errors);
         }
@@ -335,11 +327,6 @@ final class UserService
         }
     }
 
-    /**
-     * Valide la force d'un mot de passe.
-     *
-     * @param array $errors Tableau d'erreurs à compléter (par référence)
-     */
     private function validatePasswordStrength(string $password, array &$errors = []): void
     {
         if (strlen($password) < 10) {
@@ -367,17 +354,11 @@ final class UserService
     // LECTURE
     // ============================================
 
-    /**
-     * Récupère un utilisateur par son ID.
-     */
     public function find(int $id): ?User
     {
         return $this->users->findById($id);
     }
 
-    /**
-     * Récupère la liste paginée des utilisateurs.
-     */
     public function paginate(array $filters = [], int $page = 1, int $perPage = 20): array
     {
         $users = $this->users->findAll($filters, $page, $perPage);
@@ -392,25 +373,16 @@ final class UserService
         ];
     }
 
-    /**
-     * Récupère tous les rôles disponibles.
-     */
     public function getAllRoles(): array
     {
         return $this->users->findAllRoles();
     }
 
-    /**
-     * Récupère toutes les permissions disponibles.
-     */
     public function getAllPermissions(): array
     {
         return $this->users->findAllPermissions();
     }
 
-    /**
-     * Récupère l'historique des connexions d'un utilisateur.
-     */
     public function getLoginHistory(int $userId, int $limit = 20): array
     {
         return $this->users->getLoginHistory($userId, $limit);

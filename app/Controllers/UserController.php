@@ -92,7 +92,7 @@ final class UserController extends Controller
         try {
             $userId = $this->users->create($data, $password, $roleIds);
 
-            flash('success', 'Utilisateur créé avec succès.');
+            flash('success', 'Utilisateur créé avec succès. Un email lui a été envoyé.');
             return $this->redirect(url('users/' . $userId));
         } catch (ValidationException $e) {
             $_SESSION['_old']    = $data;
@@ -213,8 +213,19 @@ final class UserController extends Controller
         if ($r = (new CsrfMiddleware())->handle()) return $r;
 
         try {
-            $temporaryPassword = $this->users->resetPassword($id);
-            flash('success', 'Mot de passe réinitialisé. Mot de passe temporaire : ' . $temporaryPassword);
+            $result = $this->users->resetPassword($id);
+            $password  = $result['password'];
+            $emailSent = $result['email_sent'];
+
+            // Message avec le mot de passe (utile si l'email échoue)
+            $message = 'Mot de passe réinitialisé. Mot de passe temporaire : ' . $password;
+            if ($emailSent) {
+                $message .= ' — Envoyé par email à l\'utilisateur.';
+            } else {
+                $message .= ' — ⚠️ L\'envoi de l\'email a échoué, communiquez-le manuellement.';
+            }
+
+            flash('success', $message);
         } catch (ValidationException $e) {
             flash('error', $e->getMessage());
         }
@@ -318,8 +329,6 @@ final class UserController extends Controller
     // ============================================
     // ACTIVER LA 2FA (Étape 1 - QR code)
     // ============================================
-    // ⚠️ CORRECTION : Pas de CsrfMiddleware ici car c'est une requête GET.
-    // Le CSRF n'est nécessaire que pour les requêtes POST (formulaires).
     public function enableTwoFactor(Request $request): Response
     {
         if ($r = (new AuthMiddleware())->handle()) return $r;
@@ -336,20 +345,15 @@ final class UserController extends Controller
 
         $twoFactor = new TwoFactorService();
 
-        // Générer un nouveau secret temporaire
         $secret = $twoFactor->generateSecret();
-
-        // Stocker le secret en session (pas encore en BDD)
         $_SESSION['_2fa_setup_secret'] = $secret;
 
-        // Générer l'URL pour Google Authenticator
         $qrCodeUrl = $twoFactor->getQrCodeUrl(
             (string) config('app.name', 'Parc Info'),
             $user->email,
             $secret
         );
 
-        // Générer le QR code en base64 (via QR Server API)
         $qrCodeImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($qrCodeUrl);
 
         return $this->view('users.security-2fa-setup', [
@@ -388,13 +392,10 @@ final class UserController extends Controller
             return $this->redirect(url('profile/security/enable'));
         }
 
-        // Activer la 2FA
         $result = $twoFactor->enable($user->id, $secret);
 
-        // Nettoyer la session
         unset($_SESSION['_2fa_setup_secret']);
 
-        // Stocker les codes de secours en session pour affichage unique
         $_SESSION['_2fa_backup_codes'] = $result['backup_codes'];
 
         flash('success', 'La 2FA a été activée avec succès !');
@@ -420,7 +421,6 @@ final class UserController extends Controller
             return $this->redirect(url('profile/security'));
         }
 
-        // Nettoyer la session (les codes ne seront plus affichés après)
         unset($_SESSION['_2fa_backup_codes']);
 
         return $this->view('users.security-backup-codes', [
@@ -443,7 +443,6 @@ final class UserController extends Controller
             return $this->redirect(url('login'));
         }
 
-        // Vérifier le mot de passe pour confirmer
         $password = (string) $request->input('password', '');
         if (!password_verify($password, $user->passwordHash)) {
             flash('error', 'Mot de passe incorrect. Désactivation annulée.');
