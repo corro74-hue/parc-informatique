@@ -221,7 +221,7 @@ $router->post('/equipment/{id}/attachments/{attachmentId}/delete',  [EquipmentCo
 $router->get('/equipment/{id}/attachments/{attachmentId}/download', [EquipmentController::class, 'downloadAttachment'], ['permission' => 'equipment.view']);
 
 // ============================================
-// AFFECTATIONS D'ÉQUIPEMENTS  ← NOUVEAU
+// AFFECTATIONS D'ÉQUIPEMENTS
 // ============================================
 // IMPORTANT : /assignments/create doit être AVANT /assignments/{id}
 $router->get('/assignments',                       [\App\Controllers\AssignmentController::class, 'index'],           ['permission' => 'equipment.view']);
@@ -234,3 +234,17 @@ $router->get('/assignments/{id}/edit',             [\App\Controllers\AssignmentC
 $router->post('/assignments/{id}',                 [\App\Controllers\AssignmentController::class, 'update'],          ['permission' => 'equipment.edit']);
 $router->post('/assignments/{id}/return',          [\App\Controllers\AssignmentController::class, 'returnEquipment'], ['permission' => 'equipment.edit']);
 $router->post('/assignments/{id}/delete',          [\App\Controllers\AssignmentController::class, 'destroy'],         ['permission' => 'equipment.delete']);
+
+// ============================================
+// EMPLOYÉS  ← NOUVEAU
+// ============================================
+// IMPORTANT : /employees/create doit être AVANT /employees/{id}
+$router->get('/employees',                       [\App\Controllers\EmployeeController::class, 'index'],   ['permission' => 'equipment.view']);
+$router->get('/employees/create',                [\App\Controllers\EmployeeController::class, 'create'],  ['permission' => 'equipment.edit']);
+$router->post('/employees',                      [\App\Controllers\EmployeeController::class, 'store'],   ['permission' => 'equipment.edit']);
+
+$router->get('/employees/{id}',                  [\App\Controllers\EmployeeController::class, 'show'],    ['permission' => 'equipment.view']);
+$router->get('/employees/{id}/edit',             [\App\Controllers\EmployeeController::class, 'edit'],    ['permission' => 'equipment.edit']);
+
+$router->post('/employees/{id}',                 [\App\Controllers\EmployeeController::class, 'update'],  ['permission' => 'equipment.edit']);
+$router->post('/employees/{id}/delete',          [\App\Controllers\EmployeeController::class, 'destroy'], ['permission' => 'equipment.delete']);

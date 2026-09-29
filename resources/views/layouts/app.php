@@ -402,6 +402,9 @@
             <a href="<?= url('assignments') ?>">
                 <i class="bi bi-people"></i> Affectations
             </a>
+            <a href="<?= url('employees') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/employees') ? 'active' : '' ?>">
+                <i class="bi bi-person-badge"></i> Employés
+            </a>
             <a href="<?= url('maintenance') ?>">
                 <i class="bi bi-tools"></i> Maintenance
             </a>
