@@ -1212,8 +1212,12 @@ final class EquipmentController extends Controller
                 'designation'      => $eq->designation,
                 'serial_number'    => $eq->serialNumber,
                 'status_name'      => $eq->statusName,
+                'status_code'      => $eq->statusCode,
                 'status_color'     => $eq->statusColor,
                 'category_name'    => $eq->categoryName,
+                'brand_name'       => $eq->brandName,
+                'is_available'     => in_array($eq->statusCode, ['in_stock', 'in_service'], true),
+                'label'            => $eq->inventoryNumber . ' — ' . $eq->designation,
                 'url'              => url('equipment/' . $eq->id),
             ];
         }, $equipments);

@@ -1,24 +1,102 @@
-# Dépendances
+# ============================================
+# DÉPENDANCES (ne jamais committer)
+# ============================================
 /vendor/
 /node_modules/
 
-# Fichiers de config locaux
+# ============================================
+# FICHIERS DE CONFIGURATION LOCALE
+# ⚠️ .env contient les mots de passe ! Ne JAMAIS committer
+# ============================================
 .env
 .env.local
+.env.production
+.env.*.local
 
-# Fichiers générés / cache
-/storage/framework/cache/*
-/storage/framework/sessions/*
-/storage/framework/views/*
+# ============================================
+# BACKUPS BASE DE DONNÉES (données sensibles)
+# ============================================
+/storage/backups/
+/storage/backups/database/*.sql
+*.sql
+!.env.example
+
+# ============================================
+# STORAGE DYNAMIQUE (fichiers générés/utilisateurs)
+# ============================================
+/storage/cache/*
+/storage/sessions/*
 /storage/logs/*
+/storage/imports/*
+/storage/exports/*
+/storage/qrcodes/*
+/storage/attachments/*
+/storage/documents/*
 
-# Fichiers IDE
+# Mais on garde les dossiers vides (avec un .gitkeep)
+!/storage/cache/.gitkeep
+!/storage/sessions/.gitkeep
+!/storage/logs/.gitkeep
+!/storage/imports/.gitkeep
+!/storage/exports/.gitkeep
+!/storage/qrcodes/.gitkeep
+!/storage/attachments/.gitkeep
+!/storage/documents/.gitkeep
+!/storage/backups/.gitkeep
+
+# ============================================
+# UPLOADS PUBLICS (fichiers utilisateurs)
+# ============================================
+/public/uploads/*
+/public/documents/*
+!/public/uploads/.gitkeep
+!/public/documents/.gitkeep
+
+# ============================================
+# FICHIERS DE STRUCTURE (générés automatiquement)
+# ============================================
+structure.txt
+structure_temp.txt
+
+# ============================================
+# FICHIERS IDE
+# ============================================
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Fichiers système
+# ============================================
+# FICHIERS SYSTÈME
+# ============================================
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Sauvegardes ZIP
+# ============================================
+# ARCHIVES / SAUVEGARDES ZIP
+# ============================================
 *.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ============================================
+# FICHIERS DE LOGS À LA RACINE
+# ============================================
+*.log
+
+# ============================================
+# SCRIPTS DE TEST / BACKUPS MANUELS
+# ============================================
+test_*.php
+*_backup.php
+*.bak
+
+# ============================================
+# COMPOSER (garder les fichiers de config)
+# ============================================
+composer.phar
+composer.lock
+!composer.json

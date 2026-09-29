@@ -24,8 +24,8 @@
         </p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a href="<?= url('admin/database/health') ?>" class="btn btn-outline-info btn-sm">
-            <i class="bi bi-heart-pulse"></i> Santé BDD
+        <a href="<?= url('admin/system/health') ?>" class="btn btn-outline-info btn-sm">
+           <i class="bi bi-heart-pulse"></i> Santé système
         </a>
         <form method="POST" action="<?= url('admin/database/clean') ?>" class="d-inline"
               onsubmit="return confirm('Nettoyer les anciennes sauvegardes selon la politique de rétention ?\n\n(7 jours + 4 semaines + 12 mois)');">

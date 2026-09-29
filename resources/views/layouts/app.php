@@ -428,6 +428,10 @@
                 <a href="<?= url('audit') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/audit') ? 'active' : '' ?>">
                     <i class="bi bi-journal-text"></i> Journal d'audit
                 </a>
+                <!-- NOUVEAU : Sauvegardes BDD -->
+                <a href="<?= url('admin/database') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/admin/database') ? 'active' : '' ?>">
+                    <i class="bi bi-database-fill-gear"></i> Sauvegardes BDD
+                </a>
                 <a href="<?= url('settings') ?>">
                     <i class="bi bi-gear"></i> Paramètres
                 </a>

@@ -21,7 +21,7 @@ use PDO;
  * ⚠️ PRÉCAUTIONS :
  *    - Les sauvegardes sont stockées dans storage/backups/database/
  *    - Cette méthode utilise la commande `mysqldump` de MySQL
- *    - Sous Windows : chemin vers mysqldump = C:\xampp_gpa\mysql\bin\mysqldump.exe
+ *    - Sous Windows : chemin vers mysqldump = C:\wamp64\bin\mysql\mysql8.4.7\bin\mysqldump.exe
  *
  * 💡 BONNES PRATIQUES :
  *    - Effectuer une sauvegarde AVANT toute modification importante
@@ -78,15 +78,15 @@ final class DatabaseBackupService
         // Configuration de la BDD
         $config = require dirname(__DIR__, 3) . '/config/database.php';
 
-        // Chemin vers mysqldump (XAMPP sur Windows)
-        $mysqldump = 'C:\\xampp_gpa\\mysql\\bin\\mysqldump.exe';
+        // Chemin vers mysqldump (WampServer sur Windows)
+        $mysqldump = 'C:\\wamp64\\bin\\mysql\\mysql8.4.7\\bin\\mysqldump.exe';
 
         // Construction de la commande
         $command = sprintf(
             '"%s" --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers --default-character-set=utf8mb4 %s > "%s"',
             $mysqldump,
             $config['host'] ?? '127.0.0.1',
-            $config['port'] ?? '3307',
+            $config['port'] ?? '3306',
             $config['username'] ?? 'root',
             !empty($config['password']) ? '--password="' . $config['password'] . '"' : '',
             $config['database'] ?? 'parc_informatique',

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Middleware\MaintenanceMiddleware;
 use App\Middleware\PasswordPolicyMiddleware;
 use App\Middleware\PermissionMiddleware;
 use App\Middleware\RateLimitMiddleware;
@@ -54,7 +55,18 @@ final class Router
         (new SecurityHeadersMiddleware())->handle();
 
         // ============================================
-        // Middleware 2 : Politique de mot de passe (global)
+        // Middleware 2 : Mode maintenance (global)  ← NOUVEAU
+        // ============================================
+        // Si le mode maintenance est actif et que l'utilisateur n'est pas admin,
+        // redirection vers /maintenance. Les admins et les URLs exemptées
+        // (login, logout, /maintenance, /admin/system/*) passent.
+        $maintenanceResponse = (new MaintenanceMiddleware())->handle();
+        if ($maintenanceResponse instanceof Response) {
+            return $maintenanceResponse;
+        }
+
+        // ============================================
+        // Middleware 3 : Politique de mot de passe (global)
         // ============================================
         // Vérifie si le mot de passe de l'utilisateur connecté a expiré.
         // Le middleware gère lui-même les exclusions (login, logout, 2FA, profile).

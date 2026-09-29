@@ -102,7 +102,7 @@ $router->post('/roles/{id}',                 [RoleController::class, 'update'], 
 $router->post('/roles/{id}/delete',          [RoleController::class, 'destroy'],         ['permission' => 'settings.manage']);
 
 // ============================================
-// ADMINISTRATION — BASE DE DONNÉES  ← NOUVEAU
+// ADMINISTRATION — BASE DE DONNÉES
 // ============================================
 // IMPORTANT : les routes spécifiques doivent être AVANT /admin/database
 $router->get('/admin/database',                            [\App\Controllers\Admin\DatabaseController::class, 'index'],   ['permission' => 'settings.manage']);
@@ -117,6 +117,51 @@ $router->post('/admin/database/optimize',                  [\App\Controllers\Adm
 // Routes avec ID dynamique (À LA FIN)
 $router->get('/admin/database/backup/{id}/download',       [\App\Controllers\Admin\DatabaseController::class, 'downloadBackup'], ['permission' => 'settings.manage']);
 $router->post('/admin/database/backup/{id}/delete',        [\App\Controllers\Admin\DatabaseController::class, 'deleteBackup'],   ['permission' => 'settings.manage']);
+
+// ============================================
+// ADMINISTRATION — SYSTÈME
+// ============================================
+$router->get('/admin/system/health',                       [\App\Controllers\Admin\SystemController::class, 'health'],              ['permission' => 'settings.manage']);
+
+// Mode maintenance
+$router->post('/admin/system/maintenance/enable',          [\App\Controllers\Admin\SystemController::class, 'enableMaintenance'],   ['permission' => 'settings.manage']);
+$router->post('/admin/system/maintenance/disable',         [\App\Controllers\Admin\SystemController::class, 'disableMaintenance'],  ['permission' => 'settings.manage']);
+
+// Nettoyage
+$router->post('/admin/system/clear/cache',                 [\App\Controllers\Admin\SystemController::class, 'clearCache'],          ['permission' => 'settings.manage']);
+$router->post('/admin/system/clear/logs',                  [\App\Controllers\Admin\SystemController::class, 'clearLogs'],           ['permission' => 'settings.manage']);
+$router->post('/admin/system/clear/sessions',              [\App\Controllers\Admin\SystemController::class, 'clearSessions'],       ['permission' => 'settings.manage']);
+$router->post('/admin/system/clear/all',                   [\App\Controllers\Admin\SystemController::class, 'clearAll'],            ['permission' => 'settings.manage']);
+
+// ============================================
+// PAGE DE MAINTENANCE PUBLIQUE
+// ============================================
+$router->get('/maintenance', function (Request $request) {
+    $maintenance = new \App\Services\System\MaintenanceModeService();
+    $info = $maintenance->getInfo();
+
+    // Si le mode maintenance n'est PAS actif, on redirige
+    if (!$info['active']) {
+        return \App\Core\Response::redirect(url('dashboard'));
+    }
+
+    // Formater la date de fin
+    $endAt = null;
+    if (!empty($info['end_at'])) {
+        $endAt = date('d/m/Y à H:i', strtotime($info['end_at']));
+    }
+
+    // Afficher la vue de maintenance
+    $viewPath = dirname(__DIR__) . '/resources/views/errors/maintenance.php';
+    $content = (function () use ($viewPath, $info, $endAt) {
+        $reason = $info['reason'];
+        ob_start();
+        require $viewPath;
+        return ob_get_clean();
+    })();
+
+    return new \App\Core\Response($content, 503);
+});
 
 // ============================================
 // DASHBOARD (protégé - accessible à tous les connectés)
@@ -174,3 +219,18 @@ $router->post('/equipment/{id}/update-status', [EquipmentController::class, 'upd
 $router->post('/equipment/{id}/attachments',                        [EquipmentController::class, 'uploadAttachment'],   ['permission' => 'equipment.edit']);
 $router->post('/equipment/{id}/attachments/{attachmentId}/delete',  [EquipmentController::class, 'deleteAttachment'],   ['permission' => 'equipment.edit']);
 $router->get('/equipment/{id}/attachments/{attachmentId}/download', [EquipmentController::class, 'downloadAttachment'], ['permission' => 'equipment.view']);
+
+// ============================================
+// AFFECTATIONS D'ÉQUIPEMENTS  ← NOUVEAU
+// ============================================
+// IMPORTANT : /assignments/create doit être AVANT /assignments/{id}
+$router->get('/assignments',                       [\App\Controllers\AssignmentController::class, 'index'],           ['permission' => 'equipment.view']);
+$router->get('/assignments/create',                [\App\Controllers\AssignmentController::class, 'create'],          ['permission' => 'equipment.edit']);
+$router->post('/assignments',                      [\App\Controllers\AssignmentController::class, 'store'],           ['permission' => 'equipment.edit']);
+
+$router->get('/assignments/{id}',                  [\App\Controllers\AssignmentController::class, 'show'],            ['permission' => 'equipment.view']);
+$router->get('/assignments/{id}/edit',             [\App\Controllers\AssignmentController::class, 'edit'],            ['permission' => 'equipment.edit']);
+
+$router->post('/assignments/{id}',                 [\App\Controllers\AssignmentController::class, 'update'],          ['permission' => 'equipment.edit']);
+$router->post('/assignments/{id}/return',          [\App\Controllers\AssignmentController::class, 'returnEquipment'], ['permission' => 'equipment.edit']);
+$router->post('/assignments/{id}/delete',          [\App\Controllers\AssignmentController::class, 'destroy'],         ['permission' => 'equipment.delete']);
