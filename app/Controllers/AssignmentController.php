@@ -113,11 +113,11 @@ final class AssignmentController extends Controller
     // ============================================
     // DÉTAIL
     // ============================================
-    public function show(Request $request, int $id): Response
+    public function show(Request $request, string $id): Response
     {
         if ($r = (new AuthMiddleware())->handle()) return $r;
 
-        $assignment = $this->service->find($id);
+        $assignment = $this->service->find((int) $id);
         if ($assignment === null) {
             return $this->notFound();
         }
@@ -131,11 +131,11 @@ final class AssignmentController extends Controller
     // ============================================
     // MODIFICATION — Formulaire
     // ============================================
-    public function edit(Request $request, int $id): Response
+    public function edit(Request $request, string $id): Response
     {
         if ($r = (new AuthMiddleware())->handle()) return $r;
 
-        $assignment = $this->service->find($id);
+        $assignment = $this->service->find((int) $id);
         if ($assignment === null) {
             return $this->notFound();
         }
@@ -157,7 +157,7 @@ final class AssignmentController extends Controller
     // ============================================
     // MODIFICATION — Traitement
     // ============================================
-    public function update(Request $request, int $id): Response
+    public function update(Request $request, string $id): Response
     {
         if ($r = (new AuthMiddleware())->handle()) return $r;
 
@@ -167,7 +167,7 @@ final class AssignmentController extends Controller
         }
 
         try {
-            $this->service->update($id, $request->body, $user->id);
+            $this->service->update((int) $id, $request->body, $user->id);
 
             unset($_SESSION['_old'], $_SESSION['_errors']);
             flash('success', 'Affectation mise à jour avec succès.');
@@ -186,7 +186,7 @@ final class AssignmentController extends Controller
     // ============================================
     // RETOUR D'AFFECTATION
     // ============================================
-    public function returnEquipment(Request $request, int $id): Response
+    public function returnEquipment(Request $request, string $id): Response
     {
         if ($r = (new AuthMiddleware())->handle()) return $r;
 
@@ -198,7 +198,7 @@ final class AssignmentController extends Controller
         $endDate = (string) $request->input('end_date', '');
 
         try {
-            $this->service->returnEquipment($id, $endDate ?: null, $user->id);
+            $this->service->returnEquipment((int) $id, $endDate ?: null, $user->id);
             flash('success', 'Équipement retourné et remis en stock.');
 
         } catch (ValidationException $e) {
@@ -211,7 +211,7 @@ final class AssignmentController extends Controller
     // ============================================
     // SUPPRESSION
     // ============================================
-    public function destroy(Request $request, int $id): Response
+    public function destroy(Request $request, string $id): Response
     {
         if ($r = (new AuthMiddleware())->handle()) return $r;
 
@@ -221,7 +221,7 @@ final class AssignmentController extends Controller
         }
 
         try {
-            $this->service->delete($id, $user->id);
+            $this->service->delete((int) $id, $user->id);
             flash('success', 'Affectation supprimée avec succès.');
             return Response::redirect(url('assignments'));
 

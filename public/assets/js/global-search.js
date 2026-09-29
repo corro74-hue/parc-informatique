@@ -14,6 +14,13 @@
         const results  = document.getElementById('global-search-results');
         if (!input || !results) return;
 
+        // ⚠️ NOUVEAU : Ne pas s'activer sur les pages qui ont un autocomplete dédié
+        // (ex: formulaire d'affectation avec #equipment_search)
+        if (document.getElementById('equipment_search')) {
+            console.info('[GlobalSearch] Désactivé : autocomplete dédié détecté sur cette page.');
+            return;
+        }
+
         const cfg     = window.APP_CONFIG || {};
         const baseUrl = (cfg.baseUrl || '').replace(/\/$/, '');
 
