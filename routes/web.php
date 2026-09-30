@@ -134,9 +134,10 @@ $router->post('/admin/system/clear/sessions',              [\App\Controllers\Adm
 $router->post('/admin/system/clear/all',                   [\App\Controllers\Admin\SystemController::class, 'clearAll'],            ['permission' => 'settings.manage']);
 
 // ============================================
-// PAGE DE MAINTENANCE PUBLIQUE
+// PAGE DE MAINTENANCE PUBLIQUE (mode système)
 // ============================================
-$router->get('/maintenance', function (Request $request) {
+// ⚠️ URL renommée en /maintenance-mode car /maintenance est utilisé par le module Maintenance
+$router->get('/maintenance-mode', function (Request $request) {
     $maintenance = new \App\Services\System\MaintenanceModeService();
     $info = $maintenance->getInfo();
 
@@ -236,7 +237,7 @@ $router->post('/assignments/{id}/return',          [\App\Controllers\AssignmentC
 $router->post('/assignments/{id}/delete',          [\App\Controllers\AssignmentController::class, 'destroy'],         ['permission' => 'equipment.delete']);
 
 // ============================================
-// EMPLOYÉS  ← NOUVEAU
+// EMPLOYÉS
 // ============================================
 // IMPORTANT : /employees/create doit être AVANT /employees/{id}
 $router->get('/employees',                       [\App\Controllers\EmployeeController::class, 'index'],   ['permission' => 'equipment.view']);
@@ -248,3 +249,17 @@ $router->get('/employees/{id}/edit',             [\App\Controllers\EmployeeContr
 
 $router->post('/employees/{id}',                 [\App\Controllers\EmployeeController::class, 'update'],  ['permission' => 'equipment.edit']);
 $router->post('/employees/{id}/delete',          [\App\Controllers\EmployeeController::class, 'destroy'], ['permission' => 'equipment.delete']);
+
+// ============================================
+// MAINTENANCE (module Interventions)
+// ============================================
+// IMPORTANT : /maintenance/create doit être AVANT /maintenance/{id}
+$router->get('/maintenance',                       [\App\Controllers\MaintenanceController::class, 'index'],    ['permission' => 'equipment.view']);
+$router->get('/maintenance/create',                [\App\Controllers\MaintenanceController::class, 'create'],   ['permission' => 'equipment.edit']);
+$router->post('/maintenance',                      [\App\Controllers\MaintenanceController::class, 'store'],    ['permission' => 'equipment.edit']);
+
+$router->get('/maintenance/{id}',                  [\App\Controllers\MaintenanceController::class, 'show'],     ['permission' => 'equipment.view']);
+$router->get('/maintenance/{id}/edit',             [\App\Controllers\MaintenanceController::class, 'edit'],     ['permission' => 'equipment.edit']);
+
+$router->post('/maintenance/{id}',                 [\App\Controllers\MaintenanceController::class, 'update'],   ['permission' => 'equipment.edit']);
+$router->post('/maintenance/{id}/delete',          [\App\Controllers\MaintenanceController::class, 'destroy'],  ['permission' => 'equipment.delete']);

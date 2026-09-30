@@ -36,7 +36,7 @@ final class MaintenanceMiddleware
     private const EXCLUDED_URLS = [
         '/login',
         '/logout',
-        '/maintenance',                // La page de maintenance elle-même
+        '/maintenance-mode',           // La page publique de maintenance (mode système)
         '/admin/system/health',        // Permet aux admins de désactiver
         '/admin/system/maintenance',   // Actions sur le mode maintenance
     ];
@@ -68,8 +68,8 @@ final class MaintenanceMiddleware
             return null;
         }
 
-        // 4. Sinon → rediriger vers la page de maintenance
-        return Response::redirect(url('maintenance'));
+        // 4. Sinon → rediriger vers la page de maintenance (mode système)
+        return Response::redirect(url('maintenance-mode'));
     }
 
     /**
