@@ -70,24 +70,15 @@ if (!function_exists('public_path')) {
 if (!function_exists('url')) {
     /**
      * Génère une URL complète pour l'application.
-     *
-     * - Si APP_URL est défini et commence par http:// ou https://,
-     *   on utilise cette URL comme base (recommandé en production).
-     * - Sinon, on utilise la constante BASE_PATH définie dans public/index.php.
-     *
-     * @param string $path  Chemin relatif (ex: 'login', 'dashboard', 'equipment/42')
-     * @return string       URL absolue complète
      */
     function url(string $path = ''): string
     {
-        // Priorité 1 : APP_URL complet depuis le .env
         $appUrl = (string) env('APP_URL', '');
         if ($appUrl !== '' && preg_match('#^https?://#', $appUrl)) {
             $base = rtrim($appUrl, '/');
             return $base . ($path !== '' ? '/' . ltrim($path, '/') : '');
         }
 
-        // Priorité 2 : BASE_PATH défini dans public/index.php
         $base = defined('BASE_PATH') ? BASE_PATH : '';
         return $base . ($path !== '' ? '/' . ltrim($path, '/') : '');
     }
@@ -121,7 +112,7 @@ if (!function_exists('old')) {
 }
 
 // ============================================
-// CSRF (protection contre les attaques Cross-Site Request Forgery)
+// CSRF
 // ============================================
 if (!function_exists('csrf_token')) {
     function csrf_token(): string
@@ -150,7 +141,7 @@ if (!function_exists('verify_csrf')) {
 }
 
 // ============================================
-// MESSAGES FLASH (affichés une seule fois)
+// MESSAGES FLASH
 // ============================================
 if (!function_exists('flash')) {
     function flash(string $key, mixed $value = null): mixed
@@ -192,21 +183,69 @@ if (!function_exists('dd')) {
 }
 
 // ============================================
-// NOUVEAU : PERMISSIONS & RÔLES (RBAC)
+// AUTHENTIFICATION — HELPERS
+// ============================================
+if (!function_exists('auth_id')) {
+    /**
+     * Retourne l'ID de l'utilisateur connecté, ou null.
+     */
+    function auth_id(): ?int
+    {
+        if (!empty($_SESSION['user_id'])) {
+            return (int) $_SESSION['user_id'];
+        }
+        if (!empty($_SESSION['auth_user_id'])) {
+            return (int) $_SESSION['auth_user_id'];
+        }
+        return null;
+    }
+}
+
+if (!function_exists('is_logged_in')) {
+    /**
+     * Indique si un utilisateur est connecté.
+     */
+    function is_logged_in(): bool
+    {
+        return auth_id() !== null;
+    }
+}
+
+if (!function_exists('auth_user')) {
+    /**
+     * Retourne l'utilisateur connecté (instance User) ou null.
+     * Utilise un cache statique pour éviter les requêtes répétées.
+     */
+    function auth_user(): ?\App\Models\User
+    {
+        static $user = null;
+        static $loaded = false;
+
+        if ($loaded) {
+            return $user;
+        }
+        $loaded = true;
+
+        $id = auth_id();
+        if ($id === null) {
+            return null;
+        }
+
+        try {
+            $repo = new \App\Repositories\MySql\UserRepository();
+            $user = $repo->findById($id);
+        } catch (\Throwable $e) {
+            $user = null;
+        }
+
+        return $user;
+    }
+}
+
+// ============================================
+// PERMISSIONS & RÔLES (RBAC)
 // ============================================
 if (!function_exists('can')) {
-    /**
-     * Vérifie si l'utilisateur connecté possède une permission donnée.
-     * Utilisable dans les vues pour masquer les boutons/liens non autorisés.
-     *
-     * Exemple d'utilisation :
-     *   <?php if (can('users.create')): ?>
-     *       <a href="...">Créer un utilisateur</a>
-     *   <?php endif; ?>
-     *
-     * @param string $permission Permission à vérifier (ex: 'users.create', 'equipment.delete')
-     * @return bool True si l'utilisateur a la permission, false sinon
-     */
     function can(string $permission): bool
     {
         static $auth = null;
@@ -218,18 +257,6 @@ if (!function_exists('can')) {
 }
 
 if (!function_exists('has_role')) {
-    /**
-     * Vérifie si l'utilisateur connecté a un rôle donné (par son slug).
-     * Utilisable dans les vues.
-     *
-     * Exemple d'utilisation :
-     *   <?php if (has_role('admin')): ?>
-     *       <span>Section admin</span>
-     *   <?php endif; ?>
-     *
-     * @param string $slug Slug du rôle (ex: 'admin', 'manager', 'viewer')
-     * @return bool True si l'utilisateur a le rôle, false sinon
-     */
     function has_role(string $slug): bool
     {
         static $auth = null;

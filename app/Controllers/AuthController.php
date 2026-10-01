@@ -62,15 +62,7 @@ final class AuthController extends Controller
         $auth->login($result['user']);
         flash('success', 'Bienvenue, ' . $result['user']->getFullName() . ' !');
 
-        $intended = $_SESSION['_intended_url'] ?? url('dashboard');
-        unset($_SESSION['_intended_url']);
-
-        $basePath = defined('BASE_PATH') ? BASE_PATH : '';
-        if ($basePath !== '' && !str_starts_with($intended, $basePath)) {
-            $intended = url('dashboard');
-        }
-
-        return $this->redirect($intended);
+        return $this->redirectAfterLogin();
     }
 
     // ============================================
@@ -88,13 +80,13 @@ final class AuthController extends Controller
     }
 
     // ============================================
-    // NOUVEAU : AFFICHER LA PAGE DE SAISIE DU CODE 2FA
+    // AFFICHER LA PAGE DE SAISIE DU CODE 2FA
     // ============================================
     public function showTwoFactor(Request $request): Response
     {
         $auth = new AuthService();
 
-        if ($auth->check()) {
+        if ($auth->isAuthenticated()) {
             return $this->redirect(url('dashboard'));
         }
 
@@ -117,7 +109,7 @@ final class AuthController extends Controller
     }
 
     // ============================================
-    // NOUVEAU : VÉRIFIER LE CODE 2FA
+    // VÉRIFIER LE CODE 2FA
     // ============================================
     public function verifyTwoFactor(Request $request): Response
     {
@@ -169,19 +161,11 @@ final class AuthController extends Controller
         $auth->login($user);
         flash('success', 'Bienvenue, ' . $user->getFullName() . ' !');
 
-        $intended = $_SESSION['_intended_url'] ?? url('dashboard');
-        unset($_SESSION['_intended_url']);
-
-        $basePath = defined('BASE_PATH') ? BASE_PATH : '';
-        if ($basePath !== '' && !str_starts_with($intended, $basePath)) {
-            $intended = url('dashboard');
-        }
-
-        return $this->redirect($intended);
+        return $this->redirectAfterLogin();
     }
 
     // ============================================
-    // NOUVEAU : ANNULER LA 2FA
+    // ANNULER LA 2FA
     // ============================================
     public function cancelTwoFactor(Request $request): Response
     {
@@ -192,5 +176,25 @@ final class AuthController extends Controller
 
         flash('info', 'Vérification annulée. Vous pouvez vous reconnecter.');
         return $this->redirect(url('login'));
+    }
+
+    // ============================================
+    // HELPER PRIVÉ : Redirection post-login
+    // ============================================
+    /**
+     * Redirige vers l'URL "intended" (mémorisée par AuthMiddleware)
+     * ou vers le dashboard. Sécurité : refuse les redirections externes.
+     */
+    private function redirectAfterLogin(): Response
+    {
+        $intended = $_SESSION['_intended_url'] ?? url('dashboard');
+        unset($_SESSION['_intended_url']);
+
+        $basePath = defined('BASE_PATH') ? BASE_PATH : '';
+        if ($basePath !== '' && !str_starts_with($intended, $basePath)) {
+            $intended = url('dashboard');
+        }
+
+        return $this->redirect($intended);
     }
 }

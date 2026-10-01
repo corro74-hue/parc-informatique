@@ -49,27 +49,16 @@ final class Router
 
     public function dispatch(Request $request): Response
     {
-        // ============================================
-        // Middleware 1 : Headers de sécurité (global)
-        // ============================================
+        // Middleware global : headers de sécurité
         (new SecurityHeadersMiddleware())->handle();
 
-        // ============================================
-        // Middleware 2 : Mode maintenance (global)  ← NOUVEAU
-        // ============================================
-        // Si le mode maintenance est actif et que l'utilisateur n'est pas admin,
-        // redirection vers /maintenance. Les admins et les URLs exemptées
-        // (login, logout, /maintenance, /admin/system/*) passent.
+        // Middleware global : mode maintenance
         $maintenanceResponse = (new MaintenanceMiddleware())->handle();
         if ($maintenanceResponse instanceof Response) {
             return $maintenanceResponse;
         }
 
-        // ============================================
-        // Middleware 3 : Politique de mot de passe (global)
-        // ============================================
-        // Vérifie si le mot de passe de l'utilisateur connecté a expiré.
-        // Le middleware gère lui-même les exclusions (login, logout, 2FA, profile).
+        // Middleware global : politique de mot de passe
         $pwdResponse = (new PasswordPolicyMiddleware())->handle();
         if ($pwdResponse instanceof Response) {
             return $pwdResponse;
@@ -82,9 +71,7 @@ final class Router
             return new Response('Méthode non supportée', 405);
         }
 
-        // ============================================
-        // Route exacte (sans paramètre dynamique)
-        // ============================================
+        // Route exacte
         if (isset($this->routes[$method][$uri])) {
             $route = $this->routes[$method][$uri];
             return $this->invokeWithMiddleware(
@@ -95,9 +82,7 @@ final class Router
             );
         }
 
-        // ============================================
-        // Routes dynamiques (avec {id}, etc.)
-        // ============================================
+        // Routes dynamiques
         foreach ($this->routes[$method] as $routePath => $route) {
             $pattern = $this->compileRoute($routePath);
 
@@ -129,9 +114,6 @@ final class Router
         return '#^' . $pattern . '$#';
     }
 
-    /**
-     * Exécute les middlewares (si présents) puis le contrôleur.
-     */
     private function invokeWithMiddleware(
         callable|array $handler,
         Request $request,
@@ -139,16 +121,39 @@ final class Router
         array $options
     ): Response {
         // ============================================
+        // Middleware génériques (nouveau)
+        // Ex: 'middleware' => [AuthMiddleware::class, ...]
+        // ============================================
+        if (!empty($options['middleware']) && is_array($options['middleware'])) {
+            foreach ($options['middleware'] as $middlewareClass) {
+                if (is_string($middlewareClass) && class_exists($middlewareClass)) {
+                    $middleware = new $middlewareClass();
+                } elseif (is_object($middlewareClass)) {
+                    $middleware = $middlewareClass;
+                } else {
+                    continue;
+                }
+
+                if (method_exists($middleware, 'handle')) {
+                    $response = $middleware->handle();
+                    if ($response instanceof Response) {
+                        return $response;
+                    }
+                }
+            }
+        }
+
+        // ============================================
         // Middleware : RateLimitMiddleware
         // ============================================
         if (!empty($options['rate_limit'])) {
             $rateOptions = is_array($options['rate_limit']) ? $options['rate_limit'] : [];
             $rateMiddleware = new RateLimitMiddleware();
             $response = $rateMiddleware->handle(
-                $options['rate_limit_route'] ?? ($request->uri ?? '/'),
-                $rateOptions['max']     ?? 60,
-                $rateOptions['window']  ?? 60,
-                $rateOptions['block']   ?? 300
+                $options['rate_limit_route'] ?? $request->uri,
+                $rateOptions['max']    ?? 60,
+                $rateOptions['window'] ?? 60,
+                $rateOptions['block']  ?? 300
             );
             if ($response instanceof Response) {
                 return $response;
@@ -171,8 +176,6 @@ final class Router
 
     private function invoke(callable|array $handler, Request $request, array $params): Response
     {
-        // Les paramètres d'URL sont passés tels quels (string).
-        // Le cast en int est fait DANS LES CONTRÔLEURS si nécessaire.
         $positionalParams = array_values($params);
 
         if (is_callable($handler)) {

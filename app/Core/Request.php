@@ -52,9 +52,28 @@ final class Request
         return $headers;
     }
 
+    /**
+     * Récupère une valeur (POST en priorité, puis GET).
+     */
     public function input(string $key, mixed $default = null): mixed
     {
         return $this->body[$key] ?? $this->query[$key] ?? $default;
+    }
+
+    /**
+     * Récupère une valeur depuis la query string ($_GET).
+     */
+    public function get(string $key, mixed $default = null): mixed
+    {
+        return $this->query[$key] ?? $default;
+    }
+
+    /**
+     * Récupère une valeur depuis le body ($_POST).
+     */
+    public function post(string $key, mixed $default = null): mixed
+    {
+        return $this->body[$key] ?? $default;
     }
 
     public function isPost(): bool { return $this->method === 'POST'; }

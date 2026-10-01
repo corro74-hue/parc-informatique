@@ -25,7 +25,6 @@
             <i class="bi bi-arrow-left"></i> Retour
         </a>
 
-        <!-- Bouton Fiche PDF -->
         <a href="<?= url('equipment/' . $equipment->id . '/show-pdf') ?>"
            class="btn btn-danger btn-sm"
            target="_blank"
@@ -33,7 +32,6 @@
             <i class="bi bi-file-earmark-pdf"></i> Fiche PDF
         </a>
 
-        <!-- Bouton Historique -->
         <a href="<?= url('equipment/' . $equipment->id . '/history') ?>"
            class="btn btn-outline-info btn-sm"
            title="Voir l'historique des modifications">
@@ -185,7 +183,7 @@
         </div>
 
         <!-- ============================================ -->
-        <!-- NOUVEAU : Pièces jointes                     -->
+        <!-- Pièces jointes                               -->
         <!-- ============================================ -->
         <div class="card mb-3">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
@@ -201,7 +199,6 @@
                     <div class="row g-2 mb-3">
                         <?php foreach ($attachments as $att): ?>
                             <?php
-                            // Choisir une icône selon le type MIME
                             $icon = 'file-earmark';
                             $iconColor = '#6c757d';
                             if (str_starts_with((string) $att['mime_type'], 'image/')) {
@@ -218,7 +215,6 @@
                                 $iconColor = '#217346';
                             }
 
-                            // Taille lisible
                             $size = (int) $att['size_bytes'];
                             if ($size >= 1048576) {
                                 $sizeText = round($size / 1048576, 1) . ' Mo';
@@ -291,7 +287,6 @@
                             Types acceptés : JPG, PNG, GIF, WEBP, PDF, DOC, DOCX, XLS, XLSX, CSV, TXT — Max 10 Mo
                         </p>
 
-                        <!-- Input file caché -->
                         <input type="file"
                                name="file"
                                id="attachment-file-input"
@@ -300,10 +295,8 @@
                                required>
                     </div>
 
-                    <!-- Nom du fichier sélectionné -->
                     <div id="attachment-filename" class="alert alert-info py-2 mt-2 d-none small"></div>
 
-                    <!-- Boutons -->
                     <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
                             <label class="small text-muted mb-0">Catégorie :</label>
@@ -323,9 +316,16 @@
 
             </div>
         </div>
+
         <!-- ============================================ -->
-        <!-- FIN Pièces jointes                           -->
+        <!-- ✅ NOUVEAU : Documents liés (GED)             -->
         <!-- ============================================ -->
+        <?php
+        $entityType  = 'equipment';
+        $entityId    = $equipment->id;
+        $entityLabel = 'cet équipement';
+        require dirname(__DIR__) . '/partials/_documents_linked.php';
+        ?>
 
     </div>
 
@@ -416,7 +416,6 @@
             </div>
             <div class="card-body text-center">
                 <?php
-                // Générer le QR code à la volée
                 $baseUrl = rtrim((string) ($_ENV['APP_URL'] ?? 'http://localhost'), '/');
                 $equipmentUrl = $baseUrl . '/equipment/' . $equipment->id;
                 $qrCodeService = new \App\Services\QrCode\QrCodeService();

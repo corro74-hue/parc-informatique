@@ -128,6 +128,18 @@
         }
 
         /* ============================================ */
+        /* NOUVEAU : Breadcrumb sans soulignement       */
+        /* ============================================ */
+        .breadcrumb a,
+        .breadcrumb-item a {
+            text-decoration: none;
+        }
+        .breadcrumb a:hover,
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+
+        /* ============================================ */
         /* Barre de recherche globale                   */
         /* ============================================ */
         .global-search-wrapper {
@@ -408,7 +420,7 @@
             <a href="<?= url('maintenance') ?>">
                 <i class="bi bi-tools"></i> Maintenance
             </a>
-            <a href="<?= url('reforms') ?>">
+            <a href="<?= url('reformations') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/reformations') ? 'active' : '' ?>">
                 <i class="bi bi-recycle"></i> Réformes
             </a>
 

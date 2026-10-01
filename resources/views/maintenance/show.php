@@ -4,6 +4,7 @@
  *
  * @var string $title
  * @var \App\Models\Maintenance $maintenance
+ * @var array $documents
  */
 ?>
 
@@ -216,6 +217,18 @@
             </div>
         </div>
     <?php endif; ?>
+
+    <!-- ============================================ -->
+    <!-- ✅ NOUVEAU : Documents liés (GED)             -->
+    <!-- ============================================ -->
+    <div class="col-12">
+        <?php
+        $entityType  = 'maintenance';
+        $entityId    = $maintenance->id;
+        $entityLabel = 'cette maintenance';
+        require dirname(__DIR__) . '/partials/_documents_linked.php';
+        ?>
+    </div>
 
     <!-- Actions -->
     <div class="col-12">

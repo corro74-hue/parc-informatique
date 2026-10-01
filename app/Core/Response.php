@@ -45,6 +45,14 @@ final class Response
         ]);
     }
 
+    /**
+     * Alias de download() — utilisé par Controller::downloadFile().
+     */
+    public static function file(string $filePath, ?string $fileName = null): self
+    {
+        return self::download($filePath, $fileName);
+    }
+
     public function withHeader(string $name, string $value): self
     {
         $this->headers[$name] = $value;

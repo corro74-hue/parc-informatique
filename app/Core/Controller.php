@@ -44,4 +44,19 @@ abstract class Controller
     {
         return Response::redirect($url, $status);
     }
+
+    /**
+     * Envoie un fichier en téléchargement (PDF, CSV…).
+     *
+     * ⚠️ Nécessite que App\Core\Response possède une méthode statique file().
+     * Si elle n'existe pas encore, utilise la version "fallback" en commentaire.
+     */
+    protected function downloadFile(string $fullPath, string $downloadName): Response
+    {
+        if (!is_file($fullPath)) {
+            throw new \RuntimeException("Fichier introuvable : $fullPath");
+        }
+
+        return Response::file($fullPath, $downloadName);
+    }
 }

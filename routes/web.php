@@ -8,6 +8,8 @@ use App\Controllers\DashboardController;
 use App\Controllers\EquipmentController;
 use App\Controllers\UserController;
 use App\Controllers\RoleController;
+use App\Controllers\ReformationController;
+use App\Controllers\DocumentController;
 
 /** @var App\Core\Router $router */
 
@@ -263,3 +265,73 @@ $router->get('/maintenance/{id}/edit',             [\App\Controllers\Maintenance
 
 $router->post('/maintenance/{id}',                 [\App\Controllers\MaintenanceController::class, 'update'],   ['permission' => 'equipment.edit']);
 $router->post('/maintenance/{id}/delete',          [\App\Controllers\MaintenanceController::class, 'destroy'],  ['permission' => 'equipment.delete']);
+
+// ============================================
+// RÉFORMES (module Réformes)
+// ============================================
+// IMPORTANT : /reformations/create doit être AVANT /reformations/{id}
+
+// Liste + création
+$router->get('/reformations',                              [ReformationController::class, 'index'],               ['permission' => 'equipment.view']);
+$router->get('/reformations/create',                       [ReformationController::class, 'create'],              ['permission' => 'equipment.edit']);
+$router->post('/reformations',                             [ReformationController::class, 'store'],               ['permission' => 'equipment.edit']);
+
+// Affichage + édition
+$router->get('/reformations/{id}',                         [ReformationController::class, 'show'],                ['permission' => 'equipment.view']);
+$router->get('/reformations/{id}/edit',                    [ReformationController::class, 'edit'],                ['permission' => 'equipment.edit']);
+
+// Mise à jour + suppression
+$router->post('/reformations/{id}',                        [ReformationController::class, 'update'],              ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/delete',                 [ReformationController::class, 'destroy'],             ['permission' => 'equipment.delete']);
+
+// Items (équipements concernés)
+$router->post('/reformations/{id}/items',                  [ReformationController::class, 'addItem'],             ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/items/{itemId}/delete',  [ReformationController::class, 'removeItem'],          ['permission' => 'equipment.edit']);
+
+// Workflow — transitions
+$router->post('/reformations/{id}/propose',                [ReformationController::class, 'propose'],             ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/review',                 [ReformationController::class, 'review'],              ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/approve',                [ReformationController::class, 'approve'],             ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/reject',                 [ReformationController::class, 'reject'],              ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/postpone',               [ReformationController::class, 'postpone'],            ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/generate-pv',            [ReformationController::class, 'generatePv'],          ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/generate-exit-voucher',  [ReformationController::class, 'generateExitVoucher'], ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/complete',               [ReformationController::class, 'complete'],            ['permission' => 'equipment.edit']);
+$router->post('/reformations/{id}/cancel',                 [ReformationController::class, 'cancel'],              ['permission' => 'equipment.edit']);
+
+// Téléchargements PDF
+$router->get('/reformations/{id}/pv',                      [ReformationController::class, 'downloadPv'],          ['permission' => 'equipment.view']);
+$router->get('/reformations/{id}/exit-voucher',            [ReformationController::class, 'downloadExitVoucher'], ['permission' => 'equipment.view']);
+
+// ============================================
+// DOCUMENTS (module GED)
+// ============================================
+// IMPORTANT : /documents/create doit être AVANT /documents/{id}
+
+// Actions groupées (DOIVENT être AVANT /documents/{id} pour ne pas être capturées)
+$router->post('/documents/bulk/download',               [DocumentController::class, 'bulkDownload'],    ['permission' => 'document.download']);
+$router->post('/documents/bulk/delete',                 [DocumentController::class, 'bulkDelete'],      ['permission' => 'document.delete']);
+
+// Liste + création
+$router->get('/documents',                              [DocumentController::class, 'index'],           ['permission' => 'document.view']);
+$router->get('/documents/create',                       [DocumentController::class, 'create'],          ['permission' => 'document.create']);
+$router->post('/documents',                             [DocumentController::class, 'store'],           ['permission' => 'document.create']);
+
+// Affichage + édition
+$router->get('/documents/{id}',                         [DocumentController::class, 'show'],            ['permission' => 'document.view']);
+$router->get('/documents/{id}/edit',                    [DocumentController::class, 'edit'],            ['permission' => 'document.edit']);
+
+// Mise à jour + suppression
+$router->post('/documents/{id}',                        [DocumentController::class, 'update'],          ['permission' => 'document.edit']);
+$router->post('/documents/{id}/delete',                 [DocumentController::class, 'destroy'],         ['permission' => 'document.delete']);
+
+// Versioning
+$router->post('/documents/{id}/versions',               [DocumentController::class, 'addVersion'],      ['permission' => 'document.edit']);
+$router->post('/documents/{id}/versions/{versionId}/restore', [DocumentController::class, 'restoreVersion'], ['permission' => 'document.edit']);
+
+// Signature
+$router->post('/documents/{id}/toggle-signed',          [DocumentController::class, 'toggleSigned'],    ['permission' => 'document.edit']);
+
+// Téléchargement + prévisualisation
+$router->get('/documents/{id}/download',                [DocumentController::class, 'download'],        ['permission' => 'document.download']);
+$router->get('/documents/{id}/preview',                 [DocumentController::class, 'preview'],         ['permission' => 'document.view']);

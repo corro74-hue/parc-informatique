@@ -13,6 +13,9 @@ final class AuthService
     private const LOCK_MINUTES = 15;
     private const ATTEMPT_WINDOW_MINUTES = 15;
 
+    /** Clé de session de l'utilisateur connecté (utilisée par auth_id()) */
+    public const SESSION_USER_KEY = 'user_id';
+
     private const TWO_FACTOR_SESSION_KEY = '_2fa_user_id';
     private const TWO_FACTOR_TIME_KEY    = '_2fa_started_at';
     private const TWO_FACTOR_TIMEOUT     = 300;
@@ -86,22 +89,20 @@ final class AuthService
     {
         session_regenerate_id(true);
 
-        $_SESSION['user_id']       = $user->id;
-        $_SESSION['username']      = $user->username;
-        $_SESSION['full_name']     = $user->getFullName();
-        $_SESSION['roles']         = array_column($user->roles, 'slug');
-        $_SESSION['permissions']   = $user->permissions;
-        $_SESSION['logged_in_at']  = time();
-        $_SESSION['last_activity'] = time();
-        $_SESSION['must_change_password'] = $user->mustChangePassword;
+        $_SESSION[self::SESSION_USER_KEY]  = $user->id;
+        $_SESSION['username']              = $user->username;
+        $_SESSION['full_name']             = $user->getFullName();
+        $_SESSION['roles']                 = array_column($user->roles, 'slug');
+        $_SESSION['permissions']           = $user->permissions;
+        $_SESSION['logged_in_at']          = time();
+        $_SESSION['last_activity']         = time();
+        $_SESSION['must_change_password']  = $user->mustChangePassword;
 
         unset($_SESSION['_csrf_token']);
         unset($_SESSION[self::TWO_FACTOR_SESSION_KEY]);
         unset($_SESSION[self::TWO_FACTOR_TIME_KEY]);
 
-        // ============================================
-        // NOUVEAU : Initialiser password_changed_at si NULL (1ère connexion)
-        // ============================================
+        // Initialiser password_changed_at si NULL (1ère connexion)
         if ($user->passwordChangedAt === null) {
             $this->users->updatePasswordChangedAt($user->id);
         }
@@ -129,15 +130,33 @@ final class AuthService
 
     public function check(): bool
     {
-        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+        return !empty($_SESSION[self::SESSION_USER_KEY]);
+    }
+
+    /**
+     * Alias sémantique de check() — utile en lecture de code.
+     */
+    public function isAuthenticated(): bool
+    {
+        return $this->check();
+    }
+
+    /**
+     * Retourne l'ID de l'utilisateur connecté, ou null.
+     */
+    public function userId(): ?int
+    {
+        $id = $_SESSION[self::SESSION_USER_KEY] ?? null;
+        return $id !== null ? (int) $id : null;
     }
 
     public function user(): ?User
     {
-        if (!$this->check()) {
+        $id = $this->userId();
+        if ($id === null) {
             return null;
         }
-        return $this->users->findById((int) $_SESSION['user_id']);
+        return $this->users->findById($id);
     }
 
     public function checkSessionExpiry(int $lifetime): bool
@@ -217,13 +236,9 @@ final class AuthService
     }
 
     // ============================================
-    // NOUVEAU : Politique de mot de passe
+    // Politique de mot de passe
     // ============================================
 
-    /**
-     * Met à jour la date de dernier changement de mot de passe.
-     * Utilisé pour tracker l'expiration du mot de passe.
-     */
     public function updatePasswordChangedAt(int $userId): void
     {
         $this->users->updatePasswordChangedAt($userId);

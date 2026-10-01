@@ -1,3 +1,12 @@
+<?php
+/**
+ * @var \App\Models\User|null $user
+ * @var array $expiringWarranties
+ * @var array $recentlyExpiredWarranties
+ * @var array $stats
+ */
+?>
+
 <!-- Bandeau de bienvenue -->
 <div class="card mb-4">
     <div class="card-body">
@@ -10,7 +19,7 @@
 </div>
 
 <!-- ============================================ -->
-<!-- NOUVEAU : ALERTES GARANTIES                  -->
+<!-- ALERTES GARANTIES                            -->
 <!-- ============================================ -->
 
 <!-- Alerte : garanties qui expirent bientôt (dans ≤ 30 jours) -->
@@ -128,79 +137,237 @@
 <?php endif; ?>
 
 <!-- ============================================ -->
-<!-- FIN ALERTES GARANTIES                        -->
+<!-- CARTES STATISTIQUES DYNAMIQUES              -->
 <!-- ============================================ -->
-
-<!-- Cartes statistiques (placeholder) -->
 <div class="row g-3 mb-4">
+
+    <!-- Équipements -->
     <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-muted small mb-1">ÉQUIPEMENTS</div>
-                        <h2 class="mb-0">0</h2>
+        <a href="<?= url('equipment') ?>" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small mb-1">ÉQUIPEMENTS</div>
+                            <h2 class="mb-0 text-dark"><?= (int) $stats['equipment_total'] ?></h2>
+                            <small>
+                                <?php if ($stats['equipment_active'] > 0): ?>
+                                    <span class="text-success"><?= (int) $stats['equipment_active'] ?> actifs</span>
+                                <?php endif; ?>
+                                <?php if ($stats['equipment_reformed'] > 0): ?>
+                                    <span class="text-secondary ms-2"><?= (int) $stats['equipment_reformed'] ?> réformés</span>
+                                <?php endif; ?>
+                                <?php if ($stats['equipment_to_reform'] > 0): ?>
+                                    <span class="text-warning ms-2"><?= (int) $stats['equipment_to_reform'] ?> à réformer</span>
+                                <?php endif; ?>
+                            </small>
+                        </div>
+                        <i class="bi bi-box-seam text-primary" style="font-size: 2rem;"></i>
                     </div>
-                    <i class="bi bi-box-seam text-primary" style="font-size: 2rem;"></i>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
+
+    <!-- Maintenance en cours -->
     <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-muted small mb-1">EN MAINTENANCE</div>
-                        <h2 class="mb-0">0</h2>
+        <a href="<?= url('maintenance') ?>" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small mb-1">MAINTENANCES OUVERTES</div>
+                            <h2 class="mb-0 text-dark"><?= (int) $stats['maintenance_open'] ?></h2>
+                            <small class="text-muted">interventions en cours</small>
+                        </div>
+                        <i class="bi bi-tools text-warning" style="font-size: 2rem;"></i>
                     </div>
-                    <i class="bi bi-tools text-warning" style="font-size: 2rem;"></i>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
+
+    <!-- Réformes en attente -->
     <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-muted small mb-1">À RÉFORMER</div>
-                        <h2 class="mb-0">0</h2>
+        <a href="<?= url('reformations') ?>" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small mb-1">RÉFORMES EN COURS</div>
+                            <h2 class="mb-0 text-dark"><?= (int) $stats['reforms_pending'] ?></h2>
+                            <small class="text-muted">dossiers non clôturés</small>
+                        </div>
+                        <i class="bi bi-recycle text-danger" style="font-size: 2rem;"></i>
                     </div>
-                    <i class="bi bi-recycle text-danger" style="font-size: 2rem;"></i>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
+
+    <!-- Documents -->
     <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="text-muted small mb-1">UTILISATEURS</div>
-                        <h2 class="mb-0">1</h2>
+        <a href="<?= url('documents') ?>" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small mb-1">DOCUMENTS</div>
+                            <h2 class="mb-0 text-dark"><?= (int) $stats['documents_total'] ?></h2>
+                            <small class="text-muted">fichiers en GED</small>
+                        </div>
+                        <i class="bi bi-file-earmark-text text-info" style="font-size: 2rem;"></i>
                     </div>
-                    <i class="bi bi-people text-success" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- RACCOURCIS RAPIDES                           -->
+<!-- ============================================ -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <strong><i class="bi bi-lightning-charge-fill text-warning"></i> Accès rapides</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 text-center">
+
+                    <div class="col-md-2 col-4">
+                        <a href="<?= url('equipment/create') ?>" class="text-decoration-none d-block p-3 rounded hover-bg-light">
+                            <i class="bi bi-plus-circle text-primary" style="font-size: 2rem;"></i>
+                            <div class="mt-2 small fw-semibold text-dark">Nouvel équipement</div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-2 col-4">
+                        <a href="<?= url('maintenance/create') ?>" class="text-decoration-none d-block p-3 rounded hover-bg-light">
+                            <i class="bi bi-wrench-adjustable text-warning" style="font-size: 2rem;"></i>
+                            <div class="mt-2 small fw-semibold text-dark">Nouvelle maintenance</div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-2 col-4">
+                        <a href="<?= url('reformations/create') ?>" class="text-decoration-none d-block p-3 rounded hover-bg-light">
+                            <i class="bi bi-recycle text-danger" style="font-size: 2rem;"></i>
+                            <div class="mt-2 small fw-semibold text-dark">Nouvelle réforme</div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-2 col-4">
+                        <a href="<?= url('documents/create') ?>" class="text-decoration-none d-block p-3 rounded hover-bg-light">
+                            <i class="bi bi-cloud-upload text-info" style="font-size: 2rem;"></i>
+                            <div class="mt-2 small fw-semibold text-dark">Nouveau document</div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-2 col-4">
+                        <a href="<?= url('assignments/create') ?>" class="text-decoration-none d-block p-3 rounded hover-bg-light">
+                            <i class="bi bi-people text-success" style="font-size: 2rem;"></i>
+                            <div class="mt-2 small fw-semibold text-dark">Nouvelle affectation</div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-2 col-4">
+                        <a href="<?= url('admin/database') ?>" class="text-decoration-none d-block p-3 rounded hover-bg-light">
+                            <i class="bi bi-database-fill-gear text-secondary" style="font-size: 2rem;"></i>
+                            <div class="mt-2 small fw-semibold text-dark">Sauvegardes</div>
+                        </a>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Message informatif -->
-<div class="card">
-    <div class="card-body text-center py-5">
-        <i class="bi bi-rocket-takeoff text-primary" style="font-size: 4rem;"></i>
-        <h4 class="mt-3">L'application est en cours de construction</h4>
-        <p class="text-muted">
-            Vous êtes connecté avec succès. Les modules Inventaire, Maintenance, Réforme et Documents
-            seront ajoutés progressivement.
-        </p>
-        <div class="mt-3">
-            <span class="badge bg-primary">Étape 1 : Authentification ✅</span>
-            <span class="badge bg-secondary">Étape 2 : Inventaire (à venir)</span>
-            <span class="badge bg-secondary">Étape 3 : Maintenance (à venir)</span>
-            <span class="badge bg-secondary">Étape 4 : Réforme (à venir)</span>
+<!-- ============================================ -->
+<!-- DERNIERS DOCUMENTS AJOUTÉS                   -->
+<!-- ============================================ -->
+<?php if (!empty($stats['documents_recent'])): ?>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong><i class="bi bi-clock-history text-info"></i> Derniers documents ajoutés</strong>
+                    <a href="<?= url('documents') ?>" class="btn btn-sm btn-outline-secondary">
+                        Voir tous <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Titre</th>
+                                    <th class="text-end">Ajouté</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($stats['documents_recent'] as $doc): ?>
+                                    <tr>
+                                        <td>
+                                            <a href="<?= url('documents/' . $doc['id']) ?>" class="text-decoration-none">
+                                                <code><?= e($doc['reference'] ?? '#'.$doc['id']) ?></code>
+                                            </a>
+                                        </td>
+                                        <td><?= e($doc['title']) ?></td>
+                                        <td class="text-end">
+                                            <small class="text-muted">
+                                                <?= e(date('d/m/Y', strtotime($doc['created_at']))) ?>
+                                            </small>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Résumé rapide -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong><i class="bi bi-bar-chart-fill text-primary"></i> Résumé</strong>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small"><i class="bi bi-people"></i> Utilisateurs</span>
+                        <strong><?= (int) $stats['users_total'] ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small"><i class="bi bi-person-badge"></i> Employés</span>
+                        <strong><?= (int) $stats['employees_total'] ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-0">
+                        <span class="text-muted small"><i class="bi bi-link-45deg"></i> Affectations actives</span>
+                        <strong><?= (int) $stats['assignments_active'] ?></strong>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
+<?php endif; ?>
+
+<!-- Style pour les raccourcis -->
+<style>
+    .hover-bg-light {
+        transition: background-color 0.15s;
+    }
+    .hover-bg-light:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+    }
+    [data-bs-theme="dark"] .hover-bg-light:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    [data-bs-theme="dark"] .text-dark {
+        color: #e2e8f0 !important;
+    }
+</style>
