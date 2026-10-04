@@ -432,7 +432,9 @@
             <a href="<?= url('reformations') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/reformations') ? 'active' : '' ?>">
                 <i class="bi bi-recycle"></i> Réformes
             </a>
-
+            <a href="<?= url('campaigns') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/Parc-Informatique/public/campaigns') ? 'active' : '' ?>">
+                <i class="bi bi-clipboard-check"></i> Campagnes d'inventaire
+            </a>
             <div class="nav-section">Documents</div>
             <a href="<?= url('documents') ?>">
                 <i class="bi bi-file-earmark-text"></i> Documents

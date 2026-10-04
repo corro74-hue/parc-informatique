@@ -191,6 +191,18 @@ $router->post('/settings/toggle-maintenance', [\App\Controllers\SettingsControll
 $router->post('/settings/upload-logo',        [\App\Controllers\SettingsController::class, 'uploadLogo'],        ['permission' => 'settings.manage']);
 
 // ============================================
+// CAMPAGNES D'INVENTAIRE
+// ============================================
+$router->get('/campaigns',                                   [\App\Controllers\InventoryCampaignController::class, 'index'],   ['permission' => 'equipment.view']);
+$router->get('/campaigns/create',                            [\App\Controllers\InventoryCampaignController::class, 'create'],  ['permission' => 'equipment.edit']);
+$router->post('/campaigns',                                  [\App\Controllers\InventoryCampaignController::class, 'store'],   ['permission' => 'equipment.edit']);
+$router->get('/campaigns/{id}',                              [\App\Controllers\InventoryCampaignController::class, 'show'],    ['permission' => 'equipment.view']);
+$router->post('/campaigns/{id}/start',                       [\App\Controllers\InventoryCampaignController::class, 'start'],   ['permission' => 'equipment.edit']);
+$router->post('/campaigns/{id}/complete',                    [\App\Controllers\InventoryCampaignController::class, 'complete'],['permission' => 'equipment.edit']);
+$router->post('/campaigns/{id}/delete',                      [\App\Controllers\InventoryCampaignController::class, 'destroy'], ['permission' => 'equipment.delete']);
+$router->post('/campaigns/{id}/items/{itemId}/verify',       [\App\Controllers\InventoryCampaignController::class, 'verifyItem'], ['permission' => 'equipment.edit']);
+
+// ============================================
 // ÉQUIPEMENTS (module Inventaire)
 // ============================================
 $router->get('/equipment',                    [EquipmentController::class, 'index'],      ['permission' => 'equipment.view']);
