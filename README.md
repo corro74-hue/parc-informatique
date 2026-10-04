@@ -1,19 +1,33 @@
-# 🖥️ Parc Info — Gestion de Parc Informatique
+<div align="center">
+
+# 🖥️ Parc Info
+
+### Gestion de Parc Informatique
+
+*Inventaire complet des équipements, gestion des statuts en temps réel, exports PDF/Excel, QR codes, alertes garantie et bien plus.*
+
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-0.5.0-3b82f6?style=for-the-badge)](CHANGELOG.md)
+
+</div>
+
+---
 
 Application web de gestion de parc informatique développée en **PHP pur** (sans framework), suivant une architecture **MVC** propre avec Repository Pattern.
 
-> Inventaire complet des équipements, gestion des statuts en temps réel, exports PDF/Excel, QR codes, alertes garantie et bien plus.
-
-[![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://www.php.net/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.4-orange.svg)](https://www.mysql.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.5.0-blue.svg)](CHANGELOG.md)
+---
 
 ## 📸 Aperçu
 
-*Ajoutez ici une capture d'écran de la liste des équipements ou du tableau de bord.*
+<div align="center">
 
----
+![Tableau de bord](public/assets/images/dashboard.png)
+
+*Le tableau de bord avec alertes garanties et statistiques en temps réel.*
+
+</div>
 
 ## ✨ Fonctionnalités
 
@@ -326,15 +340,22 @@ corro74-hue
 
     La communauté PHP
 
-📅 Changelog
+---
 
-✅ Voir CHANGELOG.md pour l'historique complet.
+## 📅 Changelog
 
-✅ Version actuelle : 0.5.0
+Voir le fichier [CHANGELOG.md](CHANGELOG.md) pour l'historique complet.
+
+**Version actuelle : `0.5.0`**
+
+---
 
 <div align="center">
-Fait avec ❤️ en PHP
 
-⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
+### ⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
 
-</div> ```
+**Fait avec ❤️ en PHP**
+
+[⬆ Retour en haut](#-parc-info--gestion-de-parc-informatique)
+
+</div>
