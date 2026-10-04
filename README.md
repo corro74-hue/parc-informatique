@@ -436,6 +436,16 @@ Merci aux projets open-source qui rendent ce projet possible :
 
 ---
 
+---
+
+## 📜 Épopée du projet
+
+> *Un jour, un développeur, un WampServer orange, et une histoire de casse dans `Request.php`...*
+
+Découvrez la [**légende de Wamp64**](EPOPEE.md) — le poème qui raconte la naissance de ce projet.
+
+---
+
 <div align="center">
 
 ### ⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
