@@ -182,6 +182,15 @@ $router->get('/search', [EquipmentController::class, 'searchAjax']);
 $router->get('/audit', [\App\Controllers\AuditController::class, 'index'], ['permission' => 'audit.view']);
 
 // ============================================
+// PARAMÈTRES (Administration)
+// ============================================
+$router->get('/settings',                     [\App\Controllers\SettingsController::class, 'index'],             ['permission' => 'settings.manage']);
+$router->post('/settings/save',               [\App\Controllers\SettingsController::class, 'save'],              ['permission' => 'settings.manage']);
+$router->post('/settings/test-mail',          [\App\Controllers\SettingsController::class, 'testMail'],          ['permission' => 'settings.manage']);
+$router->post('/settings/toggle-maintenance', [\App\Controllers\SettingsController::class, 'toggleMaintenance'], ['permission' => 'settings.manage']);
+$router->post('/settings/upload-logo',        [\App\Controllers\SettingsController::class, 'uploadLogo'],        ['permission' => 'settings.manage']);
+
+// ============================================
 // ÉQUIPEMENTS (module Inventaire)
 // ============================================
 $router->get('/equipment',                    [EquipmentController::class, 'index'],      ['permission' => 'equipment.view']);

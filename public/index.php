@@ -6,7 +6,7 @@ declare(strict_types=1);
 // ============================================
 // Ce chemin est utilisé partout dans l'application
 // pour construire les URLs (redirections, liens, assets...)
-define('BASE_PATH', '/parc-informatique/public');
+define('BASE_PATH', '/Parc-Informatique/public');
 
 // ============================================
 // SESSION SÉCURISÉE (Configuration des cookies)

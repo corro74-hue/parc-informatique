@@ -22,8 +22,12 @@ final class Request
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
         $uri = parse_url($uri, PHP_URL_PATH) ?: '/';
 
-        $basePath = '/parc-informatique/public';
-        if (str_starts_with($uri, $basePath)) {
+        // Utilise la constante BASE_PATH définie dans public/index.php
+        $basePath = defined('BASE_PATH') ? BASE_PATH : '/Parc-Informatique/public';
+        
+        // ✅ CORRECTION : comparaison INSENSIBLE à la casse
+        // Windows ne distingue pas majuscules/minuscules pour les URLs
+        if (stripos($uri, $basePath) === 0) {
             $uri = substr($uri, strlen($basePath));
         }
         $uri = '/' . trim($uri, '/');
@@ -52,25 +56,16 @@ final class Request
         return $headers;
     }
 
-    /**
-     * Récupère une valeur (POST en priorité, puis GET).
-     */
     public function input(string $key, mixed $default = null): mixed
     {
         return $this->body[$key] ?? $this->query[$key] ?? $default;
     }
 
-    /**
-     * Récupère une valeur depuis la query string ($_GET).
-     */
     public function get(string $key, mixed $default = null): mixed
     {
         return $this->query[$key] ?? $default;
     }
 
-    /**
-     * Récupère une valeur depuis le body ($_POST).
-     */
     public function post(string $key, mixed $default = null): mixed
     {
         return $this->body[$key] ?? $default;

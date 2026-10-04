@@ -395,9 +395,18 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <i class="bi bi-pc-display"></i>
-            <h1>Parc Info</h1>
-        </div>
+    <?php
+    $logoPath = \App\Core\Database::getInstance()
+        ->query("SELECT `value` FROM `settings` WHERE `key` = 'app.logo'")
+        ->fetchColumn();
+    ?>
+    <?php if ($logoPath && file_exists(dirname(__DIR__, 3) . '/public/' . $logoPath)): ?>
+        <img src="<?= url($logoPath) ?>" alt="Logo" style="height: 40px; width: auto; max-width: 40px;">
+    <?php else: ?>
+        <i class="bi bi-pc-display"></i>
+    <?php endif; ?>
+    <h1>Parc Info</h1>
+</div>
         <nav class="sidebar-nav">
             <div class="nav-section">Principal</div>
             <a href="<?= url('dashboard') ?>" class="<?= (($_SERVER['REQUEST_URI'] ?? '') === '/parc-informatique/public/dashboard' || ($_SERVER['REQUEST_URI'] ?? '') === '/dashboard') ? 'active' : '' ?>">

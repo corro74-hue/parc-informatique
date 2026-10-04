@@ -266,3 +266,135 @@ if (!function_exists('has_role')) {
         return $auth->hasRole($slug);
     }
 }
+
+// ============================================
+// JOURNAL D'AUDIT — Enregistrement d'actions
+// ============================================
+if (!function_exists('logAction')) {
+    /**
+     * Enregistre une action dans le journal d'audit.
+     * La fonction s'adapte automatiquement à la structure de la table.
+     *
+     * @param string $action  Code de l'action (ex: 'UPDATE_SETTINGS')
+     * @param string $details Détails supplémentaires
+     */
+    function logAction(string $action, string $details = ''): void
+    {
+        try {
+            $pdo = \App\Core\Database::getInstance();
+
+            $userId   = auth_id();
+            $username = $_SESSION['username'] ?? ($_SESSION['full_name'] ?? 'Anonyme');
+            $ip       = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $ua       = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+            // Vérifier les colonnes disponibles dans audit_logs
+            static $columns = null;
+            if ($columns === null) {
+                try {
+                    $columns = $pdo->query("SHOW COLUMNS FROM `audit_logs`")->fetchAll(PDO::FETCH_COLUMN);
+                } catch (\Throwable $e) {
+                    $columns = [];
+                }
+            }
+
+            if (empty($columns)) {
+                error_log("logAction : table audit_logs introuvable");
+                return;
+            }
+
+            // Construire la requête selon les colonnes disponibles
+            $fields = ['action' => $action];
+            if (in_array('user_id', $columns, true))      $fields['user_id']     = $userId;
+            if (in_array('username', $columns, true))     $fields['username']    = $username;
+            if (in_array('entity_type', $columns, true))  $fields['entity_type'] = 'system';
+            if (in_array('details', $columns, true))      $fields['details']     = $details;
+            if (in_array('description', $columns, true))  $fields['description'] = $details;
+            if (in_array('ip', $columns, true))           $fields['ip']          = $ip;
+            if (in_array('ip_address', $columns, true))   $fields['ip_address']  = $ip;
+            if (in_array('user_agent', $columns, true))   $fields['user_agent']  = $ua;
+            if (in_array('created_at', $columns, true))   $fields['created_at']  = date('Y-m-d H:i:s');
+
+            $cols = implode('`, `', array_keys($fields));
+            $vals = implode(', ', array_fill(0, count($fields), '?'));
+
+            $stmt = $pdo->prepare("INSERT INTO `audit_logs` (`$cols`) VALUES ($vals)");
+            $stmt->execute(array_values($fields));
+
+        } catch (\Throwable $e) {
+            error_log("logAction ERREUR : " . $e->getMessage());
+        }
+    }
+}
+
+// ============================================
+// ENVOI D'EMAIL (PHPMailer + settings BDD)
+// ============================================
+if (!function_exists('envoyerMail')) {
+    /**
+     * Envoie un email via PHPMailer en utilisant la configuration SMTP
+     * stockée dans la table `settings`.
+     *
+     * @param string $to      Destinataire
+     * @param string $subject Sujet
+     * @param string $body    Corps HTML
+     * @return bool
+     */
+    function envoyerMail(string $to, string $subject, string $body): bool
+    {
+        try {
+            $pdo = \App\Core\Database::getInstance();
+
+            // Charger tous les settings en une requête
+            $settings = $pdo->query("SELECT `key`, `value` FROM `settings`")
+                            ->fetchAll(PDO::FETCH_KEY_PAIR);
+
+            $host      = $settings['smtp_host']       ?? '';
+            $port      = (int)($settings['smtp_port'] ?? 587);
+            $user      = $settings['smtp_user']       ?? '';
+            $pass      = $settings['smtp_pass']       ?? '';
+            $fromEmail = $settings['smtp_from_email'] ?? ($settings['smtp_from'] ?? $user);
+            $fromName  = $settings['smtp_from_name']  ?? 'Parc Info';
+            $secure    = $settings['smtp_secure']     ?? 'tls';
+
+            if (empty($host) || empty($user) || empty($pass)) {
+                error_log("envoyerMail : configuration SMTP incomplète");
+                return false;
+            }
+
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+            // SMTP
+            $mail->isSMTP();
+            $mail->Host       = $host;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $user;
+            $mail->Password   = $pass;
+            $mail->SMTPSecure = $secure === 'ssl'
+                ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+                : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = $port;
+            $mail->CharSet    = 'UTF-8';
+
+            // Expéditeur / destinataire
+            $mail->setFrom($fromEmail, $fromName);
+            $mail->addAddress($to);
+
+            // Contenu
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body    = $body;
+            $mail->AltBody = strip_tags($body);
+
+            $mail->send();
+            return true;
+
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
+            error_log("envoyerMail ERREUR PHPMailer : " . ($mail->ErrorInfo ?? $e->getMessage()));
+            return false;
+        } catch (\Throwable $e) {
+            error_log("envoyerMail EXCEPTION : " . $e->getMessage());
+            return false;
+        }
+    }
+}
