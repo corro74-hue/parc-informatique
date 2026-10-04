@@ -11,7 +11,7 @@
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-0.5.0-3b82f6?style=for-the-badge)](CHANGELOG.md)
 
-[Fonctionnalités](#-fonctionnalités) • [Installation](#-installation) • [Utilisation](#-utilisation) • [Structure](#-structure-du-projet) • [Roadmap](#-roadmap) • [Contribution](#-contribution)
+[Fonctionnalités](#-fonctionnalités) • [Installation](#-installation) • [Structure](#-structure-du-projet) • [Roadmap](#-roadmap) • [Contribution](#-contribution)
 
 </div>
 
@@ -53,6 +53,7 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 ## ✨ Fonctionnalités
 
 ### 📦 Module Équipements (Inventaire)
+
 - [x] CRUD complet (Créer, Lire, Modifier, Supprimer)
 - [x] Liste paginée avec tri multi-colonnes
 - [x] Filtres simples + avancés (dates, valeurs, garantie)
@@ -71,6 +72,7 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 - [x] **Historique** des modifications (audit)
 
 ### 👥 Module Utilisateurs
+
 - [x] CRUD complet
 - [x] Rôles et permissions (RBAC)
 - [x] Reset password
@@ -79,37 +81,44 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 - [x] Sécurité (2FA setup, backup codes)
 
 ### 🎭 Module Rôles & Permissions
+
 - [x] CRUD complet
 - [x] Attribution de permissions
 - [x] Rôle système "admin" (non supprimable)
 
 ### 📋 Journal d'audit
+
 - [x] Liste des actions avec filtres
 - [x] Traçabilité complète (user, action, entity, IP, user-agent)
 - [x] Détails avant/après
 
 ### 💾 Sauvegardes BDD
+
 - [x] Création manuelle (mysqldump)
 - [x] Liste, téléchargement, suppression
 - [x] Rétention automatique (7j / 4sem / 12mois)
 
 ### 🖥️ Santé système
+
 - [x] Version PHP, extensions, espace disque
 - [x] Permissions dossiers
 - [x] Mode maintenance (activable)
 
 ### 🤝 Module Affectations
+
 - [x] CRUD complet
 - [x] Autocomplete équipement (API AJAX)
 - [x] Retour d'affectation → équipement remis "En stock"
 - [x] Workflow complet
 
 ### 👤 Module Employés
+
 - [x] CRUD complet
 - [x] Filtres (recherche, service, statut)
 - [x] Utilisé par les Affectations
 
 ### 🔧 Module Maintenance
+
 - [x] CRUD complet
 - [x] Workflow équipement automatique
 - [x] Clôture d'intervention
@@ -117,8 +126,6 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 ---
 
 ## 🛠️ Stack Technique
-
-<div align="center">
 
 | Technologie | Usage |
 |:-----------:|:------|
@@ -135,9 +142,8 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 | **Monolog** | Logging applicatif |
 | **Google2FA** | Authentification 2FA |
 
-</div>
-
 **Architecture :**
+
 - 🏛️ Pattern **MVC** (Model-View-Controller)
 - 📦 **Repository Pattern** (interfaces + implémentations MySQL)
 - ⚙️ **Service Layer** pour la logique métier
@@ -147,40 +153,41 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 ---
 
 ## 📁 Structure du Projet
+
+```text
 Parc-Informatique/
 │
-├── app/ # Code applicatif (PSR-4)
-│ ├── Controllers/ # Contrôleurs
-│ ├── Core/ # Mini-framework (Router, Database, Csrf...)
-│ ├── DTO/ # Data Transfer Objects
-│ ├── Enums/ # Énumérations PHP
-│ ├── Exceptions/ # Exceptions personnalisées
-│ ├── Helpers/functions.php # url(), e(), csrf_field(), flash()...
-│ ├── Middleware/ # Filtres de requêtes
-│ ├── Models/ # Modèles métier
-│ ├── Repositories/ # Contracts + MySql
-│ ├── Services/ # Logique métier
-│ └── Validators/ # Validateurs
+├── app/                              # Code applicatif (PSR-4)
+│   ├── Controllers/                  # Contrôleurs
+│   ├── Core/                         # Mini-framework (Router, Database, Csrf...)
+│   ├── DTO/                          # Data Transfer Objects
+│   ├── Enums/                        # Énumérations PHP
+│   ├── Exceptions/                   # Exceptions personnalisées
+│   ├── Helpers/functions.php         # url(), e(), csrf_field(), flash()...
+│   ├── Middleware/                   # Filtres de requêtes
+│   ├── Models/                       # Modèles métier
+│   ├── Repositories/                 # Contracts + MySql
+│   ├── Services/                     # Logique métier
+│   └── Validators/                   # Validateurs
 │
-├── config/ # app.php, database.php
-├── database/ # schema.sql, seed.sql, fix_encoding.sql
-├── public/ # Document root (accessible web)
-│ ├── assets/css|js|images
-│ ├── .htaccess
-│ └── index.php # Point d'entrée unique
-├── resources/views/ # Vues PHP
-├── routes/ # web.php, api.php
-├── scripts/ # Scripts CLI
-├── storage/ # logs, backups, exports, qrcodes
-├── tests/ # PHPUnit
-├── .env # Variables d'environnement (ignoré Git)
-├── .env.example # Modèle
+├── config/                           # app.php, database.php
+├── database/                         # schema.sql, seed.sql, fix_encoding.sql
+├── public/                           # Document root (accessible web)
+│   ├── assets/css|js|images
+│   ├── .htaccess
+│   └── index.php                     # Point d'entrée unique
+├── resources/views/                  # Vues PHP
+├── routes/                           # web.php, api.php
+├── scripts/                          # Scripts CLI
+├── storage/                          # logs, backups, exports, qrcodes
+├── tests/                            # PHPUnit
+├── .env                              # Variables d'environnement (ignoré Git)
+├── .env.example                      # Modèle
 ├── composer.json
 ├── CHANGELOG.md
 ├── LICENSE
 └── README.md
-
-text
+```
 
 ---
 
@@ -200,17 +207,25 @@ text
 ```bash
 git clone https://github.com/corro74-hue/parc-informatique.git
 cd parc-informatique
-Étape 2 : Installer les dépendances
-bash
+```
+
+### Étape 2 : Installer les dépendances
+
+```bash
 composer install
-Étape 3 : Configurer l'environnement
-Copiez .env.example en .env :
+```
 
-bash
+### Étape 3 : Configurer l'environnement
+
+Copiez `.env.example` en `.env` :
+
+```bash
 copy .env.example .env
-Ouvrez .env et adaptez :
+```
 
-env
+Ouvrez `.env` et adaptez :
+
+```env
 APP_NAME="Gestion Parc Informatique"
 APP_ENV=local
 APP_DEBUG=true
@@ -229,54 +244,71 @@ DB_COLLATION=utf8mb4_unicode_ci
 
 SESSION_NAME=PARC_SESSION
 SESSION_LIFETIME=1800
-Étape 4 : Créer la base de données
-Ouvrez phpMyAdmin : http://localhost/phpmyadmin5.2.3/
+```
 
-Créez une base parc_informatique (interclassement utf8mb4_unicode_ci)
+### Étape 4 : Créer la base de données
 
-Importez database/schema.sql (onglet Importer)
+1. Ouvrez **phpMyAdmin** : `http://localhost/phpmyadmin5.2.3/`
+2. Créez une base **`parc_informatique`** (interclassement `utf8mb4_unicode_ci`)
+3. Importez `database/schema.sql` (onglet **Importer**)
+4. Importez `database/seed.sql` (données initiales)
 
-Importez database/seed.sql (données initiales)
+### Étape 5 : Placer le projet dans WampServer
 
-Étape 5 : Placer le projet dans WampServer
 Le projet doit être dans :
 
-text
+```text
 C:\wamp64\www\Parc-Informatique\
-⚠️ Respectez la casse : P et I majuscules
+```
 
-Étape 6 : Lancer l'application
+⚠️ Respectez la casse : **P** et **I** majuscules
+
+### Étape 6 : Lancer l'application
+
 Ouvrez dans votre navigateur :
 
-text
+```text
 http://localhost/Parc-Informatique/public/
-Étape 7 : Se connecter
-Champ	Valeur par défaut
-Utilisateur	admin
-Mot de passe	admin
-⚠️ Changez ce mot de passe après la première connexion (via Profil → Sécurité)
+```
 
-📊 Modèle de données
-Le projet utilise 39 tables MySQL, dont :
+### Étape 7 : Se connecter
 
-Table	Description
-equipment	Équipements du parc
-equipment_categories	Catégories (PC, imprimante...)
-equipment_statuses	Statuts (En service, En panne...)
-brands	Marques (HP, Dell...)
-services	Services de l'entreprise
-sites	Sites physiques
-locations	Localisations précises
-employees	Employés
-assignments	Affectations d'équipements
-maintenance	Historique de maintenance
-reformations	Équipements réformés
-inventory_campaigns	Campagnes d'inventaire
-audit_logs	Journal d'audit
-users	Utilisateurs
-roles / permissions	RBAC
-🧪 Scripts utilitaires
-bash
+| Champ | Valeur par défaut |
+|-------|-------------------|
+| **Utilisateur** | `admin` |
+| **Mot de passe** | `admin` |
+
+⚠️ **Changez ce mot de passe après la première connexion** (via Profil → Sécurité)
+
+---
+
+## 📊 Modèle de données
+
+Le projet utilise **39 tables MySQL**, dont :
+
+| Table | Description |
+|-------|-------------|
+| `equipment` | Équipements du parc |
+| `equipment_categories` | Catégories (PC, imprimante...) |
+| `equipment_statuses` | Statuts (En service, En panne...) |
+| `brands` | Marques (HP, Dell...) |
+| `services` | Services de l'entreprise |
+| `sites` | Sites physiques |
+| `locations` | Localisations précises |
+| `employees` | Employés |
+| `assignments` | Affectations d'équipements |
+| `maintenance` | Historique de maintenance |
+| `reformations` | Équipements réformés |
+| `inventory_campaigns` | Campagnes d'inventaire |
+| `audit_logs` | Journal d'audit |
+| `users` | Utilisateurs |
+| `roles` / `permissions` | RBAC |
+
+---
+
+## 🧪 Scripts utilitaires
+
+```bash
 # Tester la connexion à la base
 php scripts/test_charset.php
 
@@ -285,94 +317,131 @@ php scripts/test_equipment.php
 
 # Réinitialiser l'admin
 php scripts/reset_admin.php
-🐛 Dépannage
-<details> <summary><strong>🔴 L'icône WampServer reste orange</strong></summary>
-Cause : Conflit de port 80 avec un autre programme (Skype, IIS, etc.)
+```
 
-Solution : Vérifiez qu'aucun autre programme n'utilise le port 80.
+---
 
-</details><details> <summary><strong>🔴 Erreur 404 sur toutes les pages</strong></summary>
-Cause : BASE_PATH dans public/index.php ne correspond pas au nom réel du dossier.
+## 🐛 Dépannage
 
-Solution : Vérifiez que le dossier s'appelle exactement Parc-Informatique (casse incluse).
+<details>
+<summary><strong>🔴 L'icône WampServer reste orange</strong></summary>
 
-</details><details> <summary><strong>🔴 Les accents s'affichent mal</strong></summary>
-Cause : Problème d'encodage UTF-8.
+**Cause :** Conflit de port 80 avec un autre programme (Skype, IIS, etc.)
 
-Solution : Vérifiez que la BDD et les tables sont en utf8mb4_unicode_ci, et que charset=utf8mb4 est dans le DSN PDO.
-
-</details><details> <summary><strong>🔴 Composer introuvable</strong></summary>
-Cause : Composer n'est pas dans le PATH Windows.
-
-Solution : Vérifiez que C:\ProgramData\ComposerSetup\bin est dans le PATH.
+**Solution :** Vérifiez qu'aucun autre programme n'utilise le port 80.
 
 </details>
-🔄 Roadmap
-✅ Terminé (v0.5.0)
-☑ Authentification + 2FA
-☑ Module Équipements complet
-☑ Module Utilisateurs & Rôles
-☑ Module Affectations
-☑ Module Employés
-☑ Module Maintenance
-☑ Module Sauvegardes BDD
-☑ Journal d'audit
-☑ Santé système
-🚧 En développement (v0.6.0)
-□ Module Campagnes d'inventaire
-□ Module Rapports (statistiques + graphiques Chart.js)
-□ Module Documents (GED)
-□ Module Paramètres (SMTP, notifications, sécurité)
-🔮 Prévu (v1.0.0)
-□ API REST complète
-□ Mode sombre
-□ Notifications temps réel
-□ Application mobile
-□ Tests automatisés (PHPUnit)
-🤝 Contribution
-Les contributions sont les bienvenues ! Pour contribuer :
 
-Fork le projet
+<details>
+<summary><strong>🔴 Erreur 404 sur toutes les pages</strong></summary>
 
-Créez une branche : git checkout -b feature/nouvelle-fonctionnalite
+**Cause :** `BASE_PATH` dans `public/index.php` ne correspond pas au nom réel du dossier.
 
-Commit : git commit -m 'Ajout de la fonctionnalité X'
+**Solution :** Vérifiez que le dossier s'appelle exactement `Parc-Informatique` (casse incluse).
 
-Push : git push origin feature/nouvelle-fonctionnalite
+</details>
 
-Ouvrez une Pull Request
+<details>
+<summary><strong>🔴 Les accents s'affichent mal</strong></summary>
 
-📝 Licence
-Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
+**Cause :** Problème d'encodage UTF-8.
 
-👤 Auteur
+**Solution :** Vérifiez que la BDD et les tables sont en `utf8mb4_unicode_ci`, et que `charset=utf8mb4` est dans le DSN PDO.
+
+</details>
+
+<details>
+<summary><strong>🔴 Composer introuvable</strong></summary>
+
+**Cause :** Composer n'est pas dans le PATH Windows.
+
+**Solution :** Vérifiez que `C:\ProgramData\ComposerSetup\bin` est dans le PATH.
+
+</details>
+
+---
+
+## 🔄 Roadmap
+
+### ✅ Terminé (v0.5.0)
+
+- [x] Authentification + 2FA
+- [x] Module Équipements complet
+- [x] Module Utilisateurs & Rôles
+- [x] Module Affectations
+- [x] Module Employés
+- [x] Module Maintenance
+- [x] Module Sauvegardes BDD
+- [x] Journal d'audit
+- [x] Santé système
+
+### 🚧 En développement (v0.6.0)
+
+- [ ] Module Campagnes d'inventaire
+- [ ] Module Rapports (statistiques + graphiques Chart.js)
+- [ ] Module Documents (GED)
+- [ ] Module Paramètres (SMTP, notifications, sécurité)
+
+### 🔮 Prévu (v1.0.0)
+
+- [ ] API REST complète
+- [ ] Mode sombre
+- [ ] Notifications temps réel
+- [ ] Application mobile
+- [ ] Tests automatisés (PHPUnit)
+
+---
+
+## 🤝 Contribution
+
+Les contributions sont **les bienvenues** ! Pour contribuer :
+
+1. **Fork** le projet
+2. Créez une **branche** : `git checkout -b feature/nouvelle-fonctionnalite`
+3. **Commit** : `git commit -m 'Ajout de la fonctionnalité X'`
+4. **Push** : `git push origin feature/nouvelle-fonctionnalite`
+5. Ouvrez une **Pull Request**
+
+---
+
+## 📝 Licence
+
+Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+---
+
+## 👤 Auteur
+
 <div align="center">
-corro74-hue
 
-https://img.shields.io/badge/GitHub-corro74--hue-181717?style=for-the-badge&logo=github
+**corro74-hue**
+
+[![GitHub](https://img.shields.io/badge/GitHub-corro74--hue-181717?style=for-the-badge&logo=github)](https://github.com/corro74-hue)
 
 </div>
-🙏 Remerciements
+
+---
+
+## 🙏 Remerciements
+
 Merci aux projets open-source qui rendent ce projet possible :
 
-Bootstrap — Framework CSS
+- [Bootstrap](https://getbootstrap.com/) — Framework CSS
+- [Bootstrap Icons](https://icons.getbootstrap.com/) — Icônes
+- [Dompdf](https://github.com/dompdf/dompdf) — Génération PDF
+- [PhpSpreadsheet](https://github.com/PHPOffice/PhpSpreadsheet) — Fichiers Excel
+- [Endroid QR Code](https://github.com/endroid/qr-code) — QR Codes
+- [Monolog](https://github.com/Seldaek/monolog) — Logging
+- La **communauté PHP** pour l'inspiration
 
-Bootstrap Icons — Icônes
-
-Dompdf — Génération PDF
-
-PhpSpreadsheet — Fichiers Excel
-
-Endroid QR Code — QR Codes
-
-Monolog — Logging
-
-La communauté PHP pour l'inspiration
+---
 
 <div align="center">
-⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
-Fait avec ❤️ en PHP
 
-⬆ Retour en haut
+### ⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
 
-</div> ```
+**Fait avec ❤️ en PHP**
+
+[⬆ Retour en haut](#️-parc-info)
+
+</div>
