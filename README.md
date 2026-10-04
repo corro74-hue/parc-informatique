@@ -4,7 +4,10 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 
 > Inventaire complet des équipements, gestion des statuts en temps réel, exports PDF/Excel, QR codes, alertes garantie et bien plus.
 
----
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://www.php.net/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.4-orange.svg)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-0.5.0-blue.svg)](CHANGELOG.md)
 
 ## 📸 Aperçu
 
@@ -14,46 +17,73 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 
 ## ✨ Fonctionnalités
 
-### 📦 Module Équipements (Inventaire)
+### 📦 Module Équipements (Inventaire) — ✅ 100%
 - ✅ CRUD complet (Créer, Lire, Modifier, Supprimer)
 - ✅ Liste paginée avec tri multi-colonnes
-- ✅ Filtres simples (recherche, catégorie, statut, service, site, marque)
-- ✅ **Filtres avancés** (plage de dates, plage de valeurs, sous garantie, sans N° de série)
+- ✅ Filtres simples + avancés (dates, valeurs, garantie)
 - ✅ Changement de statut en **AJAX** sans rechargement
 - ✅ **Barre de compteurs** par statut (badges colorés cliquables)
-- ✅ **Recherche globale** dans la navbar (avec dropdown AJAX)
+- ✅ **Recherche globale** dans la navbar (dropdown AJAX)
 - ✅ **Corbeille** avec restauration et suppression définitive
 - ✅ **Duplication** d'équipement en un clic
 - ✅ **QR Code** unique par équipement (étiquette imprimable)
 - ✅ **Fiche PDF individuelle** (A4 portrait, avec QR code)
 - ✅ **Export Excel/CSV** de la liste filtrée
 - ✅ **Export PDF** de la liste complète
+- ✅ **Import CSV** avec prévisualisation
+- ✅ **Pièces jointes** (upload/download)
+- ✅ **Actions groupées** (bulk update, bulk delete, bulk export)
+- ✅ **Historique** des modifications (audit)
 
-### 📊 Tableau de bord
-- ✅ Bandeau de bienvenue personnalisé
-- ✅ **Alertes garantie** : équipements dont la garantie expire bientôt
-- ✅ **Alertes garantie** : garanties récemment expirées
-- ✅ Cartes statistiques (équipements, maintenance, réformes, utilisateurs)
+### 👥 Module Utilisateurs — ✅ 100%
+- ✅ CRUD complet
+- ✅ Rôles et permissions (RBAC)
+- ✅ Reset password
+- ✅ Toggle actif/inactif
+- ✅ Profil personnel
+- ✅ Sécurité (2FA setup, backup codes)
 
-### 🔐 Authentification & Sécurité
-- ✅ Connexion sécurisée avec sessions
-- ✅ **Protection CSRF** sur tous les formulaires
-- ✅ Middleware d'authentification
-- ✅ Rôles utilisateurs (admin, technicien)
+### 🎭 Module Rôles & Permissions — ✅ 100%
+- ✅ CRUD complet
+- ✅ Attribution de permissions
+- ✅ Rôle système "admin" (non supprimable)
+
+### 📋 Journal d'audit — ✅ 100%
+- ✅ Liste des actions avec filtres
+- ✅ Traçabilité complète (user, action, entity, IP, user-agent)
+- ✅ Détails avant/après
+
+### 💾 Sauvegardes BDD — ✅ 100%
+- ✅ Création manuelle (mysqldump)
+- ✅ Liste, téléchargement, suppression
+- ✅ Rétention automatique (7j / 4sem / 12mois)
+
+### 🖥️ Santé système — ✅ 100%
+- ✅ Version PHP, extensions, espace disque
+- ✅ Permissions dossiers
+- ✅ Mode maintenance (activable)
+
+### 🤝 Module Affectations — ✅ 100%
+- ✅ CRUD complet
+- ✅ Autocomplete équipement (API AJAX)
+- ✅ Retour d'affectation → équipement remis "En stock"
+- ✅ Workflow complet
+
+### 👤 Module Employés — ✅ 100%
+- ✅ CRUD complet
+- ✅ Filtres (recherche, service, statut)
+- ✅ Utilisé par les Affectations
+
+### 🔧 Module Maintenance — ✅ 100%
+- ✅ CRUD complet
+- ✅ Workflow équipement automatique
+- ✅ Clôture d'intervention
 
 ### 🔄 Roadmap (Modules prévus)
-- 🔄 **Actions groupées** (sélection multiple + traitement en masse)
-- 🔄 **Import CSV/Excel** d'équipements
-- 🔄 **Historique des modifications** (traçabilité complète)
-- 🔄 **Pièces jointes** (photos, factures, garanties)
-- 🔄 **Mode sombre**
-- 🔄 **Module Maintenance** complet
-- 🔄 **Module Réformes** complet
-- 🔄 **Module Affectations** (équipement ↔ employé)
-- 🔄 **Module Documents** (GED)
-- 🔄 **Module Rapports** (statistiques avancées)
-- 🔄 **Module Utilisateurs** (CRUD + permissions)
-- 🔄 **Module Campagnes d'inventaire**
+- 📋 **Module Campagnes d'inventaire**
+- 📊 **Module Rapports** (statistiques avancées + graphiques)
+- 📄 **Module Documents** (GED)
+- ⚙️ **Module Paramètres** (SMTP, notifications, sécurité)
 
 ---
 
@@ -61,23 +91,24 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 
 | Technologie | Usage |
 |-------------|-------|
-| **PHP 8.1+** | Langage principal (architecture MVC maison) |
-| **MySQL 5.7+** | Base de données relationnelle |
-| **PDO** | Accès base de données sécurisé (requêtes préparées) |
+| **PHP 8.2+** | Langage principal (architecture MVC maison) |
+| **MySQL 8.4** | Base de données relationnelle |
+| **PDO** | Accès BDD sécurisé (requêtes préparées) |
 | **Composer** | Gestionnaire de dépendances PHP |
 | **Bootstrap 5.3** | Framework CSS responsive (via CDN) |
 | **Bootstrap Icons** | Icônes vectorielles |
-| **JavaScript (Vanilla)** | Interactions AJAX (statuts, recherche) |
+| **JavaScript (Vanilla)** | Interactions AJAX |
 | **Dompdf** | Génération de PDF |
 | **PhpSpreadsheet** | Génération de fichiers Excel |
 | **Endroid QR Code** | Génération des QR codes |
 | **Monolog** | Logging applicatif |
+| **Google2FA** | Authentification 2FA |
 
 **Architecture :**
 - Pattern **MVC** (Model-View-Controller)
-- **Repository Pattern** pour l'accès aux données (interfaces + implémentations MySQL)
+- **Repository Pattern** (interfaces + implémentations MySQL)
 - **Service Layer** pour la logique métier
-- **Middleware** pour l'authentification et le CSRF
+- **Middleware** (Auth, CSRF, Guest, Permission, RateLimit)
 - **DTO** et **Enums** pour la robustesse des données
 
 ---
@@ -85,157 +116,39 @@ Application web de gestion de parc informatique développée en **PHP pur** (san
 ## 📁 Structure du Projet
 
 ```
-parc-informatique/
+Parc-Informatique/
 │
-├── app/                              # Code applicatif (PSR-4)
-│   ├── Controllers/                  # Contrôleurs (logique des requêtes)
-│   │   ├── Api/                      # (à venir) Contrôleurs API
-│   │   ├── AuthController.php
-│   │   ├── DashboardController.php
-│   │   └── EquipmentController.php
-│   │
-│   ├── Core/                         # Cœur du mini-framework
-│   │   ├── Controller.php
-│   │   ├── Csrf.php                  # Protection CSRF
-│   │   ├── Database.php              # Connexion PDO Singleton
-│   │   ├── Request.php
-│   │   ├── Response.php
-│   │   └── Router.php
-│   │
-│   ├── DTO/                          # Data Transfer Objects (à venir)
-│   ├── Enums/                        # Énumérations PHP 8.1+ (à venir)
-│   │
-│   ├── Exceptions/                   # Exceptions personnalisées
-│   │   ├── NotFoundException.php
-│   │   └── ValidationException.php
-│   │
-│   ├── Helpers/                      # Fonctions helper globales
-│   │   └── functions.php             # url(), e(), csrf_field(), flash()...
-│   │
-│   ├── Middleware/                   # Filtres de requêtes
-│   │   ├── AuthMiddleware.php
-│   │   ├── CsrfMiddleware.php
-│   │   └── GuestMiddleware.php
-│   │
-│   ├── Models/                       # Modèles métier
-│   │   ├── Equipment.php
-│   │   └── User.php
-│   │
-│   ├── Policies/                     # Autorisations (à venir)
-│   │
-│   ├── Repositories/                 # Couche d'accès aux données
-│   │   ├── Contracts/                # Interfaces
-│   │   │   ├── EquipmentRepositoryInterface.php
-│   │   │   └── UserRepositoryInterface.php
-│   │   └── MySql/                    # Implémentations MySQL
-│   │       ├── EquipmentRepository.php
-│   │       └── UserRepository.php
-│   │
-│   ├── Services/                     # Logique métier
-│   │   ├── Audit/                    # (à venir) Journal d'audit
-│   │   ├── Auth/AuthService.php
-│   │   ├── Document/                 # (à venir) GED
-│   │   ├── Equipment/EquipmentService.php
-│   │   ├── Export/                   # (à venir) Exports Excel/PDF
-│   │   ├── Import/                   # (à venir) Imports CSV
-│   │   ├── Maintenance/              # (à venir) Maintenance
-│   │   ├── Notification/             # (à venir) Notifications
-│   │   ├── QrCode/QrCodeService.php
-│   │   └── Reform/                   # (à venir) Réformes
-│   │
-│   └── Validators/                   # Validateurs (à venir)
+├── app/ # Code applicatif (PSR-4)
+│ ├── Controllers/ # Contrôleurs
+│ ├── Core/ # Mini-framework (Router, Database, Csrf...)
+│ ├── DTO/ # Data Transfer Objects
+│ ├── Enums/ # Énumérations PHP
+│ ├── Exceptions/ # Exceptions personnalisées
+│ ├── Helpers/functions.php # url(), e(), csrf_field(), flash()...
+│ ├── Middleware/ # Filtres de requêtes
+│ ├── Models/ # Modèles métier
+│ ├── Repositories/ # Contracts + MySql
+│ ├── Services/ # Logique métier
+│ └── Validators/ # Validateurs
 │
-├── config/                           # Configuration
-│   ├── app.php
-│   └── database.php
-│
-├── database/                         # Scripts SQL
-│   ├── backups/                      # Sauvegardes SQL (à venir)
-│   ├── migrations/                   # Migrations (à venir)
-│   ├── seeds/                        # Seeders (à venir)
-│   ├── fix_encoding.sql
-│   ├── reset_reference_data.sql
-│   ├── schema.sql                    # Schéma complet
-│   └── seed.sql                      # Données initiales
-│
-├── public/                           # Document root (accessible web)
-│   ├── assets/
-│   │   ├── css/                      # (à venir) Styles personnalisés
-│   │   ├── images/                   # (à venir) Images
-│   │   └── js/
-│   │       ├── equipment-status.js   # AJAX changement de statut
-│   │       └── global-search.js      # AJAX recherche globale
-│   ├── documents/                    # (à venir) PDFs générés
-│   ├── uploads/                      # (à venir) Uploads utilisateurs
-│   ├── .htaccess                     # Réécriture URL
-│   └── index.php                     # Point d'entrée unique
-│
-├── resources/                        # Ressources non-web
-│   ├── templates/                    # Templates d'export
-│   │   ├── excel/                    # (à venir) Templates XLSX
-│   │   └── pdf/                      # (à venir) Templates PDF
-│   └── views/                        # Vues PHP
-│       ├── assignment/               # (à venir)
-│       ├── auth/
-│       │   └── login.php
-│       ├── campaigns/                # (à venir)
-│       ├── dashboard/
-│       │   └── index.php
-│       ├── documents/                # (à venir)
-│       ├── equipment/
-│       │   ├── partials/
-│       │   │   ├── _filters.php
-│       │   │   └── _form.php
-│       │   ├── create.php
-│       │   ├── edit.php
-│       │   ├── index.php
-│       │   ├── qrcode.php
-│       │   ├── show.php
-│       │   └── trash.php
-│       ├── errors/
-│       │   ├── 404.php
-│       │   └── 500.php
-│       ├── layouts/
-│       │   ├── app.php               # Layout principal
-│       │   └── auth.php              # Layout page de login
-│       ├── maintenance/              # (à venir)
-│       ├── partials/                 # (à venir) Partials globaux
-│       ├── reform/                   # (à venir)
-│       ├── reports/                  # (à venir)
-│       └── users/                    # (à venir)
-│
-├── routes/                           # Définition des routes
-│   ├── api.php
-│   └── web.php
-│
-├── scripts/                          # Scripts CLI utilitaires
-│   ├── reset_admin.php
-│   ├── test_charset.php
-│   └── test_equipment.php
-│
-├── storage/                          # Données générées
-│   ├── backups/                      # Sauvegardes
-│   ├── cache/                        # Cache applicatif
-│   ├── documents/                    # Documents générés
-│   ├── exports/                      # Exports Excel/CSV
-│   ├── imports/                      # Fichiers à importer
-│   ├── logs/                         # Logs Monolog
-│   │   ├── app-2026-09-21.log
-│   │   ├── app-2026-09-23.log
-│   │   └── php-errors.log
-│   ├── qrcodes/                      # QR codes générés
-│   └── sessions/                     # Sessions PHP
-│
-├── tests/                            # Tests (PHPUnit)
-│   ├── Feature/                      # (à venir) Tests fonctionnels
-│   └── Unit/                         # (à venir) Tests unitaires
-│
-├── .env                              # Variables d'environnement (ignoré par Git)
-├── .gitignore                        # Fichiers exclus de Git
-├── composer.json                     # Dépendances PHP
-├── composer.lock                     # Versions verrouillées
-└── README.md                         # Ce fichier
-```
+├── config/ # app.php, database.php
+├── database/ # schema.sql, seed.sql, fix_encoding.sql
+├── public/ # Document root (accessible web)
+│ ├── assets/css|js|images
+│ ├── .htaccess
+│ └── index.php # Point d'entrée unique
+├── resources/views/ # Vues PHP
+├── routes/ # web.php, api.php
+├── scripts/ # Scripts CLI
+├── storage/ # logs, backups, exports, qrcodes
+├── tests/ # PHPUnit
+├── .env # Variables d'environnement (ignoré Git)
+├── .env.example # Modèle
+├── composer.json
+├── CHANGELOG.md
+├── LICENSE
+└── README.md
+
 
 ---
 
@@ -243,10 +156,13 @@ parc-informatique/
 
 ### Prérequis
 
-- **PHP 8.1** ou supérieur ([php.net](https://www.php.net/downloads))
-- **MySQL 5.7** ou supérieur ([mysql.com](https://dev.mysql.com/downloads/))
+- **PHP 8.2** ou supérieur
+- **MySQL 8.0** ou supérieur (ou MariaDB 11+)
 - **Composer** ([getcomposer.org](https://getcomposer.org/download/))
-- **XAMPP** (recommandé sur Windows) ou **WAMP** / **MAMP**
+- **WampServer 3.4+** (recommandé sur Windows)
+  - Apache 2.4.65 (port 80)
+  - PHP 8.3.28
+  - MySQL 8.4.7
 
 ### Étape 1 : Cloner le dépôt
 
@@ -271,165 +187,154 @@ composer install
 
 2. Ouvre `.env` et configure tes paramètres :
    ```env
-   APP_NAME="Gestion Parc Informatique"
-   APP_ENV=local
-   APP_DEBUG=true
-   APP_URL=http://localhost/parc-informatique/public
-   APP_TIMEZONE=Africa/Algiers
+      APP_NAME="Gestion Parc Informatique"
+      APP_ENV=local
+      APP_DEBUG=true
+      APP_URL=http://localhost/Parc-Informatique/public
+      APP_TIMEZONE=Africa/Algiers
+      APP_LOCALE=fr
 
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3307
-   DB_DATABASE=parc_informatique
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
+      DB_CONNECTION=mysql
+      DB_HOST=127.0.0.1
+      DB_PORT=3306
+      DB_DATABASE=parc_informatique
+      DB_USERNAME=root
+      DB_PASSWORD=
+      DB_CHARSET=utf8mb4
+      DB_COLLATION=utf8mb4_unicode_ci
+
+      SESSION_NAME=PARC_SESSION
+      SESSION_LIFETIME=1800
+  ```
 
 ### Étape 4 : Créer la base de données
 
-1. Ouvre **phpMyAdmin** : [http://localhost/phpmyadmin](http://localhost/phpmyadmin)
-2. Crée une base de données nommée **`parc_informatique`**
-3. Importe le schéma :
-   - Onglet **Importer**
-   - Sélectionne `database/schema.sql`
-   - Clique sur **Exécuter**
-4. Importe les données initiales :
-   - Importe `database/seed.sql` (statuts, catégories, marques)
+Ouvrez phpMyAdmin : http://localhost/phpmyadmin5.2.3/
 
-### Étape 5 : Lancer l'application
+Créez une base parc_informatique (interclassement utf8mb4_unicode_ci)
 
-**Option 1 : Avec XAMPP/WAMP**
+Importez database/schema.sql (onglet Importer)
 
-Place le projet dans `htdocs/parc-informatique` puis ouvre :
+Importez database/seed.sql (données initiales)
+
+### Étape 5 : Placer le projet dans WampServer :
+
+dans `C:\wamp64\www\Parc-Informatique\` 
+
+(⚠️ Respectez la casse : P et I majuscules)
+
+### Étape 6 : Lancer l'application
+
+Ouvrez dans votre navigateur :
+
 ```
-http://localhost/parc-informatique/public/
+http://localhost/Parc-Informatique/public/
+
 ```
+### Étape 7 : Se connecter
 
-**Option 2 : Avec le serveur PHP intégré**
-
-```bash
-php -S localhost:8000 -t public
-```
-
-Puis ouvre : `http://localhost:8000`
-
-### Étape 6 : Se connecter
-
-Utilise les identifiants créés par le script `scripts/reset_admin.php` :
+Champ	Valeur par défaut
 
 ```
 Nom d'utilisateur : admin
 Mot de passe      : admin
+
 ```
-
-⚠️ **Change ce mot de passe après la première connexion !**
-
----
-
-## 📊 Modèle de données
-
-Le projet utilise **15+ tables MySQL** :
-
-| Table | Description |
-|-------|-------------|
-| `equipment` | Équipements du parc |
-| `equipment_categories` | Catégories (PC, imprimante, etc.) |
-| `equipment_statuses` | Statuts (En service, En panne, etc.) |
-| `brands` | Marques (HP, Dell, etc.) |
-| `services` | Services de l'entreprise |
-| `sites` | Sites physiques |
-| `locations` | Localisations précises |
-| `employees` | Employés responsables |
-| `assignments` | Affectations d'équipements |
-| `maintenance` | Historique de maintenance |
-| `reformations` | Équipements réformés |
-| `inventory_campaigns` | Campagnes d'inventaire |
-| `audit_logs` | Journal d'audit |
-| `users` | Utilisateurs de l'application |
-| `roles` / `permissions` | Gestion des rôles |
+⚠️ Changez ce mot de passe après la première connexion ! (via Profil → Sécurité)
 
 ---
 
-## 🧪 Tests
+📊 Modèle de données
 
-Le projet inclut quelques scripts de test dans `scripts/` :
+Le projet utilise 39 tables MySQL, dont :
 
-```bash
+Table	Description
+equipment	Équipements du parc
+equipment_categories	Catégories (PC, imprimante...)
+equipment_statuses	Statuts (En service, En panne...)
+brands	Marques (HP, Dell...)
+services	Services de l'entreprise
+sites	Sites physiques
+locations	Localisations précises
+employees	Employés
+assignments	Affectations d'équipements
+maintenance	Historique de maintenance
+reformations	Équipements réformés
+inventory_campaigns	Campagnes d'inventaire
+audit_logs	Journal d'audit
+users	Utilisateurs
+roles / permissions	RBAC
+
+🧪 Scripts utilitaires
+
+bash
 # Tester la connexion à la base
+
 php scripts/test_charset.php
 
 # Tester le module équipement
+
 php scripts/test_equipment.php
 
 # Réinitialiser l'admin
+
 php scripts/reset_admin.php
-```
 
----
+🐛 Dépannage
 
-## 🤝 Contribution
+L'icône WampServer reste orange
+→ Conflit de port 80. Vérifiez qu'aucun autre programme (Skype, IIS) n'utilise le port 80.
+
+Erreur 404 sur toutes les pages
+→ Vérifiez que BASE_PATH dans public/index.php correspond exactement au nom du dossier (casse incluse).
+
+Les accents s'affichent mal
+→ Vérifiez que la BDD et les tables sont en utf8mb4_unicode_ci, et que charset=utf8mb4 est dans le DSN PDO.
+
+Composer introuvable
+→ Vérifiez que C:\ProgramData\ComposerSetup\bin est dans le PATH Windows.
+
+🤝 Contribution
 
 Les contributions sont les bienvenues ! Pour contribuer :
 
-1. Fork le projet
-2. Crée une branche (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commit tes changements (`git commit -m 'Ajout de la fonctionnalité X'`)
-4. Push sur la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Ouvre une Pull Request
+Fork le projet
 
----
+Créez une branche (git checkout -b feature/nouvelle-fonctionnalite)
 
-## 📝 Licence
+Commit (git commit -m 'Ajout de la fonctionnalité X')
 
-Ce projet est sous licence **MIT**. Voir le fichier `LICENSE` pour plus de détails.
+Push (git push origin feature/nouvelle-fonctionnalite)
 
----
+Ouvrez une Pull Request
 
-## 👤 Auteur
+📝 Licence
 
-**corro74-hue**
-- GitHub : [@corro74-hue](https://github.com/corro74-hue)
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
 
----
+👤 Auteur
 
-## 🙏 Remerciements
+corro74-hue
 
-- Bootstrap pour le framework CSS
-- Bootstrap Icons pour les icônes
-- Dompdf, PhpSpreadsheet, Endroid QR Code pour les libs
-- La communauté PHP pour l'inspiration
+     GitHub : @corro74-hue
 
----
+🙏 Remerciements
 
-## 📅 Changelog
+    Bootstrap & Bootstrap Icons
 
-### Version 0.3.0 — En cours
-- ✅ Module Équipements complet (CRUD, filtres, exports)
-- ✅ QR Codes et étiquettes imprimables
-- ✅ Changement de statut AJAX
-- ✅ Barre de compteurs par statut
-- ✅ Filtres avancés (dates, valeurs, garantie)
-- ✅ Alertes garantie sur le dashboard
-- ✅ Recherche globale dans la navbar
-- 🔄 En cours : Actions groupées, import CSV, historique
+    Dompdf, PhpSpreadsheet, Endroid QR Code
 
-### Version 0.2.0
-- ✅ Tableau de bord avec statistiques
-- ✅ Corbeille avec restauration
-- ✅ Duplication d'équipements
-- ✅ Export PDF/Excel
+    La communauté PHP
 
-### Version 0.1.0
-- ✅ Authentification
-- ✅ Layout principal (sidebar, topbar)
-- ✅ Structure MVC de base
+📅 Changelog
 
----
+✅ Voir CHANGELOG.md pour l'historique complet.
+
+✅ Version actuelle : 0.5.0
 
 <div align="center">
+Fait avec ❤️ en PHP
 
-**Fait avec ❤️ en PHP**
+⭐ Si ce projet vous a aidé, n'hésitez pas à lui donner une étoile !
 
-⭐ Si ce projet t'a aidé, n'hésite pas à lui donner une étoile !
-
-</div>
+</div> ```
