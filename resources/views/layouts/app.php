@@ -128,7 +128,7 @@
         }
 
         /* ============================================ */
-        /* NOUVEAU : Breadcrumb sans soulignement       */
+        /* Breadcrumb sans soulignement                 */
         /* ============================================ */
         .breadcrumb a,
         .breadcrumb-item a {
@@ -267,7 +267,7 @@
         }
 
         /* ============================================ */
-        /* NOUVEAU : Barre d'actions groupées (bulk)    */
+        /* Barre d'actions groupées (bulk)              */
         /* ============================================ */
         .bulk-actions-bar {
             position: fixed;
@@ -326,7 +326,7 @@
         }
 
         /* ============================================ */
-        /* NOUVEAU : Ajustements pour le Mode Sombre    */
+        /* Ajustements pour le Mode Sombre              */
         /* ============================================ */
         [data-bs-theme="dark"] body {
             background: #0f172a;
@@ -383,7 +383,7 @@
         };
     </script>
 
-    <!-- NOUVEAU : Script anti-flash pour le mode sombre -->
+    <!-- Script anti-flash pour le mode sombre -->
     <script>
         (function() {
             const theme = localStorage.getItem('theme') || 'light';
@@ -395,70 +395,75 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-header">
-    <?php
-    $logoPath = \App\Core\Database::getInstance()
-        ->query("SELECT `value` FROM `settings` WHERE `key` = 'app.logo'")
-        ->fetchColumn();
-    ?>
-    <?php if ($logoPath && file_exists(dirname(__DIR__, 3) . '/public/' . $logoPath)): ?>
-        <img src="<?= url($logoPath) ?>" alt="Logo" style="height: 40px; width: auto; max-width: 40px;">
-    <?php else: ?>
-        <i class="bi bi-pc-display"></i>
-    <?php endif; ?>
-    <h1>Parc Info</h1>
-</div>
+            <?php
+            $logoPath = \App\Core\Database::getInstance()
+                ->query("SELECT `value` FROM `settings` WHERE `key` = 'app.logo'")
+                ->fetchColumn();
+            ?>
+            <?php if ($logoPath && file_exists(dirname(__DIR__, 3) . '/public/' . $logoPath)): ?>
+                <img src="<?= url($logoPath) ?>" alt="Logo" style="height: 40px; width: auto; max-width: 40px;">
+            <?php else: ?>
+                <i class="bi bi-pc-display"></i>
+            <?php endif; ?>
+            <h1>Parc Info</h1>
+        </div>
         <nav class="sidebar-nav">
+            <?php
+            $currentUri = $_SERVER['REQUEST_URI'] ?? '';
+            $uriLower = strtolower($currentUri);
+            ?>
+
             <div class="nav-section">Principal</div>
-            <a href="<?= url('dashboard') ?>" class="<?= (($_SERVER['REQUEST_URI'] ?? '') === '/parc-informatique/public/dashboard' || ($_SERVER['REQUEST_URI'] ?? '') === '/dashboard') ? 'active' : '' ?>">
+            <a href="<?= url('dashboard') ?>" class="<?= str_contains($uriLower, '/dashboard') ? 'active' : '' ?>">
                 <i class="bi bi-speedometer2"></i> Tableau de bord
             </a>
 
             <div class="nav-section">Gestion</div>
-            <a href="<?= url('equipment') ?>" class="<?= (str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/equipment') && !str_contains($_SERVER['REQUEST_URI'] ?? '', '/equipment/trash')) ? 'active' : '' ?>">
-                 <i class="bi bi-box-seam"></i> Équipements
+            <a href="<?= url('equipment') ?>" class="<?= (str_contains($uriLower, '/equipment') && !str_contains($uriLower, '/equipment/trash')) ? 'active' : '' ?>">
+                <i class="bi bi-box-seam"></i> Équipements
             </a>
-            <a href="<?= url('equipment/trash') ?>" class="<?= str_contains($_SERVER['REQUEST_URI'] ?? '', '/equipment/trash') ? 'active' : '' ?>">
+            <a href="<?= url('equipment/trash') ?>" class="<?= str_contains($uriLower, '/equipment/trash') ? 'active' : '' ?>">
                 <i class="bi bi-trash"></i> Corbeille
             </a>
-            <a href="<?= url('assignments') ?>">
+            <a href="<?= url('assignments') ?>" class="<?= str_contains($uriLower, '/assignments') ? 'active' : '' ?>">
                 <i class="bi bi-people"></i> Affectations
             </a>
-            <a href="<?= url('employees') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/employees') ? 'active' : '' ?>">
+            <a href="<?= url('employees') ?>" class="<?= str_contains($uriLower, '/employees') ? 'active' : '' ?>">
                 <i class="bi bi-person-badge"></i> Employés
             </a>
-            <a href="<?= url('maintenance') ?>">
+            <a href="<?= url('maintenance') ?>" class="<?= str_contains($uriLower, '/maintenance') ? 'active' : '' ?>">
                 <i class="bi bi-tools"></i> Maintenance
             </a>
-            <a href="<?= url('reformations') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/reformations') ? 'active' : '' ?>">
+            <a href="<?= url('reformations') ?>" class="<?= str_contains($uriLower, '/reformations') ? 'active' : '' ?>">
                 <i class="bi bi-recycle"></i> Réformes
             </a>
-            <a href="<?= url('campaigns') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/Parc-Informatique/public/campaigns') ? 'active' : '' ?>">
+            <a href="<?= url('campaigns') ?>" class="<?= str_contains($uriLower, '/campaigns') ? 'active' : '' ?>">
                 <i class="bi bi-clipboard-check"></i> Campagnes d'inventaire
             </a>
+
             <div class="nav-section">Documents</div>
-            <a href="<?= url('documents') ?>">
+            <a href="<?= url('documents') ?>" class="<?= str_contains($uriLower, '/documents') ? 'active' : '' ?>">
                 <i class="bi bi-file-earmark-text"></i> Documents
             </a>
-            <a href="<?= url('reports') ?>">
+            <a href="<?= url('reports') ?>" class="<?= str_contains($uriLower, '/reports') ? 'active' : '' ?>">
                 <i class="bi bi-bar-chart"></i> Rapports
             </a>
 
             <?php if (can('users.view') || can('settings.manage') || has_role('admin')): ?>
                 <div class="nav-section">Administration</div>
-                <a href="<?= url('users') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/users') ? 'active' : '' ?>">
+                <a href="<?= url('users') ?>" class="<?= str_contains($uriLower, '/users') ? 'active' : '' ?>">
                     <i class="bi bi-person-badge"></i> Utilisateurs
                 </a>
-                <a href="<?= url('roles') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/roles') ? 'active' : '' ?>">
+                <a href="<?= url('roles') ?>" class="<?= str_contains($uriLower, '/roles') ? 'active' : '' ?>">
                     <i class="bi bi-shield-lock"></i> Rôles et permissions
                 </a>
-                <a href="<?= url('audit') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/audit') ? 'active' : '' ?>">
+                <a href="<?= url('audit') ?>" class="<?= str_contains($uriLower, '/audit') ? 'active' : '' ?>">
                     <i class="bi bi-journal-text"></i> Journal d'audit
                 </a>
-                <!-- NOUVEAU : Sauvegardes BDD -->
-                <a href="<?= url('admin/database') ?>" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/parc-informatique/public/admin/database') ? 'active' : '' ?>">
+                <a href="<?= url('admin/database') ?>" class="<?= str_contains($uriLower, '/admin/database') ? 'active' : '' ?>">
                     <i class="bi bi-database-fill-gear"></i> Sauvegardes BDD
                 </a>
-                <a href="<?= url('settings') ?>">
+                <a href="<?= url('settings') ?>" class="<?= str_contains($uriLower, '/settings') ? 'active' : '' ?>">
                     <i class="bi bi-gear"></i> Paramètres
                 </a>
             <?php endif; ?>
@@ -485,7 +490,6 @@
             </div>
 
             <div class="user-menu">
-                <!-- NOUVEAU : Bouton de bascule du thème -->
                 <button id="theme-toggle" class="btn btn-sm btn-light" title="Changer de thème">
                     <i class="bi bi-moon-stars"></i>
                 </button>
@@ -502,15 +506,11 @@
                         <i class="bi bi-chevron-down"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-
-                        <!-- NOUVEAU : Lien "Mon profil" -->
                         <li>
                             <a href="<?= url('profile') ?>" class="dropdown-item">
                                 <i class="bi bi-person"></i> Mon profil
                             </a>
                         </li>
-
-                        <!-- NOUVEAU : Lien "Sécurité" avec badge 2FA -->
                         <li>
                             <a href="<?= url('profile/security') ?>" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-shield-lock"></i>
@@ -526,10 +526,7 @@
                                 <?php endif; ?>
                             </a>
                         </li>
-
                         <li><hr class="dropdown-divider"></li>
-
-                        <!-- Lien "Déconnexion" (existant) -->
                         <li>
                             <form method="POST" action="<?= url('logout') ?>" class="m-0">
                                 <?= csrf_field() ?>
@@ -558,9 +555,6 @@
                 </div>
             <?php endif; ?>
 
-            <!-- ============================================ -->
-            <!-- NOUVEAU : Flash "warning"                    -->
-            <!-- ============================================ -->
             <?php if ($msg = flash('warning')): ?>
                 <div class="alert alert-warning alert-dismissible fade show">
                     <i class="bi bi-exclamation-triangle-fill"></i> <?= e($msg) ?>
@@ -568,9 +562,6 @@
                 </div>
             <?php endif; ?>
 
-            <!-- ============================================ -->
-            <!-- NOUVEAU : Avertissement d'expiration du mot de passe -->
-            <!-- ============================================ -->
             <?php if (!empty($_SESSION['_password_expiry_warning'])): ?>
                 <?php $daysLeft = (int) $_SESSION['_password_expiry_warning']; ?>
                 <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center">
@@ -595,13 +586,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Scripts personnalisés -->
     <script src="<?= url('assets/js/equipment-status.js') ?>"></script>
     <script src="<?= url('assets/js/global-search.js') ?>"></script>
     <script src="<?= url('assets/js/equipment-bulk.js') ?>"></script>
-    
-    <!-- NOUVEAU : Script du mode sombre -->
     <script src="<?= url('assets/js/theme.js') ?>"></script>
 </body>
 </html>

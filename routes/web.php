@@ -325,6 +325,13 @@ $router->get('/reformations/{id}/pv',                      [ReformationControlle
 $router->get('/reformations/{id}/exit-voucher',            [ReformationController::class, 'downloadExitVoucher'], ['permission' => 'equipment.view']);
 
 // ============================================
+// RAPPORTS & STATISTIQUES
+// ============================================
+$router->get('/reports',              [\App\Controllers\ReportController::class, 'index'],       ['permission' => 'equipment.view']);
+$router->get('/reports/equipment',    [\App\Controllers\ReportController::class, 'equipment'],   ['permission' => 'equipment.view']);
+$router->get('/reports/maintenance',  [\App\Controllers\ReportController::class, 'maintenance'], ['permission' => 'equipment.view']);
+
+// ============================================
 // DOCUMENTS (module GED)
 // ============================================
 // IMPORTANT : /documents/create doit être AVANT /documents/{id}
