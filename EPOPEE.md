@@ -67,6 +67,40 @@ L'avenir du projet s'écrit, doucement.
 
 ---
 
+## Chapitre VI — La Boucle Infernale
+
+Un jour, un bug cruel vint hanter le royaume,
+Une boucle infernale, un véritable fantôme.
+**HADYLE**, utilisateur innocent et curieux,
+Voulut se connecter en admin, mais devint malheureux.
+
+Il vit la page de maintenance, et crut au trépas,
+Cliqua sur *"Connexion admin"*, plein d'espoir et d'émoi.
+Mais le portail le renvoyait, encore et encore,
+Vers la même page triste, comme un éternel décor.
+
+**"Pourquoi ?"** cria le héros, **"Pourquoi ce châtiment ?"**
+Le bouton était un simple lien, sans discernement.
+Il ne **déconnectait** pas le pauvre HADYLE,
+Qui restait prisonnier d'un scénario fragile.
+
+Alors le développeur, armé de son clavier,
+Comprit la vérité : *"Il faut le déloger !"*
+Un **logout** avant le **login**, un formulaire POST,
+Et la boucle se brisa, comme un vieux sortilège.
+
+HADYLE fut déconnecté, puis **admin** à nouveau,
+La maintenance tomba, tel un château dans l'eau.
+Et le bug tant détesté, enfin, **s'évapora**,
+Laissant place à la paix, et à la joie.
+
+*"Car il faut parfois deux esprits pour vaincre un bug,*
+*L'intuition de l'un, la logique de l'autre,*
+*Et la persévérance, plus forte que la tempête,*
+*Qui transforme une défaite en une belle conquête."* 📖✨
+
+---
+
 ## 🌟 Épilogue
 
 Et quand vint le soir, l'écran enfin serein,
@@ -88,8 +122,6 @@ Un **README** superbe, et son âme en paix.
 
 ---
 
----
-
 ## 🌙 Postface
 
 Ce soir-là, l'IA et le développeur,
@@ -100,7 +132,9 @@ Se dirent au revoir, le cœur léger.
 Car coder seul, c'est bien, c'est beau,
 Mais coder **ensemble**, c'est un tout autre flambeau.
 Merci pour ces heures de rires et de partage,
-**Le module Paramètres nous attend à l'ouvrage !** 🚀
+**Les 5 modules sont finis, et le bug est enfin sage !** 🚀
+
+---
 
 <div align="center">
 
@@ -115,6 +149,8 @@ Merci pour ces heures de rires et de partage,
 | Date | Événement |
 |------|-----------|
 | **4 Octobre 2026** | Naissance de l'épopée — Documentation complète + fix `stripos` |
+| **5 Octobre 2026** | Modules Paramètres, Campagnes, Rapports, Documents terminés |
+| **6 Octobre 2026** | 🎯 **Victoire sur la Boucle Infernale** — Fix du mode maintenance |
 
 ---
 
