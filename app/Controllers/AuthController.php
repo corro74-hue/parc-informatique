@@ -68,14 +68,33 @@ final class AuthController extends Controller
     // ============================================
     // DÉCONNEXION
     // ============================================
+    /**
+     * Déconnecte l'utilisateur.
+     *
+     * Supporte 2 modes :
+     *   - Normal : redirige vers /login (avec flash "Vous êtes déconnecté")
+     *   - Maintenance : redirige vers /login avec flash d'info
+     *     (utilisé par le bouton "Connexion admin" de la page maintenance)
+     */
     public function logout(Request $request): Response
     {
         $auth = new AuthService();
         $auth->logout();
 
+        // Redémarrer une session pour pouvoir utiliser flash()
         session_start();
-        flash('success', 'Vous êtes déconnecté.');
 
+        // Détecter le contexte (maintenance ou déconnexion volontaire)
+        $redirectTo = (string) $request->input('redirect_to', '');
+        $reason     = (string) $request->input('reason', '');
+
+        if ($reason === 'maintenance') {
+            flash('info', 'Vous avez été déconnecté. Vous pouvez maintenant vous connecter en tant qu\'administrateur.');
+        } else {
+            flash('success', 'Vous êtes déconnecté.');
+        }
+
+        // Dans tous les cas, on va sur /login
         return $this->redirect(url('login'));
     }
 

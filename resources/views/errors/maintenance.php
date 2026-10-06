@@ -91,6 +91,17 @@
         .admin-link:hover {
             text-decoration: underline;
         }
+        /* Info : indicateur de session active */
+        .session-notice {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #7f1d1d;
+        }
     </style>
 </head>
 <body>
@@ -130,14 +141,39 @@
             </div>
         <?php endif; ?>
 
+        <!-- ⚠️ Message si un utilisateur est actuellement connecté -->
+        <?php if (!empty($_SESSION['user_id'])): ?>
+            <div class="session-notice">
+                <i class="bi bi-person-fill-exclamation"></i>
+                <strong>Vous êtes actuellement connecté en tant que
+                <?= e($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'utilisateur') ?></strong>.
+                <br>
+                Pour vous reconnecter en tant qu'administrateur, vous devez d'abord vous déconnecter.
+            </div>
+        <?php endif; ?>
+
         <!-- Actions -->
         <div class="d-flex justify-content-center gap-2 flex-wrap">
-            <button onclick="window.location.reload()" class="btn btn-primary">
+            <button onclick="window.location.reload()" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-clockwise"></i> Réessayer
             </button>
-            <a href="<?= url('login') ?>" class="btn btn-outline-secondary">
-                <i class="bi bi-box-arrow-in-right"></i> Connexion admin
-            </a>
+
+            <?php if (!empty($_SESSION['user_id'])): ?>
+                <!-- ✅ Un utilisateur est connecté (non-admin) → il faut d'abord le déconnecter -->
+                <form method="POST" action="<?= url('logout') ?>" class="d-inline m-0">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="redirect_to" value="login">
+                    <input type="hidden" name="reason" value="maintenance">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-shield-lock-fill"></i> Connexion admin
+                    </button>
+                </form>
+            <?php else: ?>
+                <!-- ✅ Aucun utilisateur connecté → aller directement sur /login -->
+                <a href="<?= url('login') ?>" class="btn btn-primary">
+                    <i class="bi bi-box-arrow-in-right"></i> Connexion admin
+                </a>
+            <?php endif; ?>
         </div>
 
         <!-- Footer -->

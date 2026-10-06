@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services\Auth;
 
+use App\Core\Database;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\MySql\UserRepository;
@@ -89,11 +90,15 @@ final class AuthService
     {
         session_regenerate_id(true);
 
+        // 🎯 CHARGEMENT DES RÔLES DIRECTEMENT DEPUIS LA BDD
+        // (au lieu de $user->roles qui peut être vide)
+        $roles = $this->loadUserRoles($user->id);
+
         $_SESSION[self::SESSION_USER_KEY]  = $user->id;
         $_SESSION['username']              = $user->username;
         $_SESSION['full_name']             = $user->getFullName();
-        $_SESSION['roles']                 = array_column($user->roles, 'slug');
-        $_SESSION['permissions']           = $user->permissions;
+        $_SESSION['roles']                 = $roles;
+        $_SESSION['permissions']           = $user->permissions ?? [];
         $_SESSION['logged_in_at']          = time();
         $_SESSION['last_activity']         = time();
         $_SESSION['must_change_password']  = $user->mustChangePassword;
@@ -105,6 +110,32 @@ final class AuthService
         // Initialiser password_changed_at si NULL (1ère connexion)
         if ($user->passwordChangedAt === null) {
             $this->users->updatePasswordChangedAt($user->id);
+        }
+    }
+
+    /**
+     * 🎯 Charge les slugs des rôles d'un utilisateur DEPUIS LA BDD.
+     * Retourne un tableau de slugs en minuscules.
+     *
+     * @return string[]
+     */
+    private function loadUserRoles(int $userId): array
+    {
+        try {
+            $pdo = Database::getInstance();
+            $stmt = $pdo->prepare("
+                SELECT LOWER(r.slug) AS slug
+                FROM user_roles ur
+                JOIN roles r ON r.id = ur.role_id
+                WHERE ur.user_id = ?
+            ");
+            $stmt->execute([$userId]);
+            $roles = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+            return is_array($roles) ? $roles : [];
+        } catch (\Throwable $e) {
+            error_log('AuthService::loadUserRoles : ' . $e->getMessage());
+            return [];
         }
     }
 
@@ -182,12 +213,20 @@ final class AuthService
         return in_array($permission, $_SESSION['permissions'] ?? [], true);
     }
 
+    /**
+     * 🎯 Vérifie si l'utilisateur connecté a un rôle donné.
+     * Insensible à la casse.
+     */
     public function hasRole(string $slug): bool
     {
         if (!$this->check()) {
             return false;
         }
-        return in_array($slug, $_SESSION['roles'] ?? [], true);
+
+        $slug  = strtolower($slug);
+        $roles = array_map('strtolower', $_SESSION['roles'] ?? []);
+
+        return in_array($slug, $roles, true);
     }
 
     // ============================================
