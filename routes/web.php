@@ -191,6 +191,11 @@ $router->post('/settings/toggle-maintenance', [\App\Controllers\SettingsControll
 $router->post('/settings/upload-logo',        [\App\Controllers\SettingsController::class, 'uploadLogo'],        ['permission' => 'settings.manage']);
 
 // ============================================
+// À PROPOS
+// ============================================
+$router->get('/about', [\App\Controllers\AboutController::class, 'index']);
+
+// ============================================
 // TODO / TABLEAU DE BORD DU PROJET
 // ============================================
 $router->get('/todo',        [\App\Controllers\TodoController::class, 'index'],  ['permission' => 'settings.manage']);

@@ -6,17 +6,38 @@
     <title><?= e($title ?? 'Accueil') ?> — <?= e(config('app.name')) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- 🎨 Google Fonts : Inter + Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --primary: #667eea;
             --primary-dark: #5568d3;
             --sidebar-width: 260px;
         }
+        * {
+            box-sizing: border-box;
+        }
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: #f5f7fa;
             min-height: 100vh;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+        h1, h2, h3, h4 {
+            font-family: 'Poppins', system-ui, sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        /* ============================================ */
+        /* 🎯 SIDEBAR - FIX : pas de débordement        */
+        /* ============================================ */
         .sidebar {
             width: var(--sidebar-width);
             position: fixed;
@@ -26,17 +47,26 @@
             background: #1e293b;
             color: #cbd5e1;
             overflow-y: auto;
+            overflow-x: hidden;
             z-index: 1000;
         }
+
+        /* ============================================ */
+        /* 🎨 SIDEBAR HEADER - Logo 80px                */
+        /* ============================================ */
         .sidebar-header {
-            padding: 20px;
+            padding: 20px 15px;
             border-bottom: 1px solid #334155;
             display: flex;
             align-items: center;
+            justify-content: center;
+            flex-direction: column;
             gap: 10px;
+            min-height: 120px;
+            width: 100%;
         }
         .sidebar-header i {
-            font-size: 1.8rem;
+            font-size: 2.5rem;
             color: var(--primary);
         }
         .sidebar-header h1 {
@@ -44,7 +74,29 @@
             margin: 0;
             color: white;
             font-weight: 600;
+            text-align: center;
+            font-family: 'Poppins', system-ui, sans-serif;
         }
+        .sidebar-header img {
+            height: 80px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            background: #ffffff;
+            padding: 8px;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+        }
+        .sidebar-header img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        /* ============================================ */
+        /* NAVIGATION                                   */
+        /* ============================================ */
         .sidebar-nav {
             padding: 15px 0;
         }
@@ -57,6 +109,8 @@
             text-decoration: none;
             transition: all 0.2s;
             font-size: 0.95rem;
+            white-space: nowrap;
+            font-weight: 500;
         }
         .sidebar-nav a:hover {
             background: #334155;
@@ -66,22 +120,31 @@
             background: var(--primary);
             color: white;
             border-left: 3px solid white;
+            font-weight: 700;
         }
         .sidebar-nav a i {
             font-size: 1.1rem;
             width: 20px;
+            flex-shrink: 0;
         }
         .sidebar-nav .nav-section {
             padding: 15px 20px 5px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
             color: #64748b;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+            letter-spacing: 0.8px;
+            font-weight: 800;
+            white-space: nowrap;
+            font-family: 'Inter', system-ui, sans-serif;
         }
+
+        /* ============================================ */
+        /* MAIN CONTENT                                 */
+        /* ============================================ */
         .main-content {
             margin-left: var(--sidebar-width);
             min-height: 100vh;
+            width: calc(100% - var(--sidebar-width));
         }
         .topbar {
             background: white;
@@ -93,8 +156,9 @@
         }
         .topbar h2 {
             margin: 0;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             color: #1e293b;
+            font-weight: 800;
         }
         .user-menu {
             display: flex;
@@ -110,8 +174,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+        .user-info strong {
+            font-weight: 700;
         }
         .user-info small {
             display: block;
@@ -168,6 +236,7 @@
             font-size: 0.9rem;
             background: #f8fafc;
             transition: all 0.15s;
+            font-family: 'Inter', system-ui, sans-serif;
         }
         .global-search-input:focus {
             outline: none;
@@ -200,6 +269,7 @@
             letter-spacing: 0.5px;
             border-bottom: 1px solid #f1f5f9;
             background: #fafbfc;
+            font-weight: 700;
         }
         .gs-empty {
             padding: 20px;
@@ -401,11 +471,11 @@
                 ->fetchColumn();
             ?>
             <?php if ($logoPath && file_exists(dirname(__DIR__, 3) . '/public/' . $logoPath)): ?>
-                <img src="<?= url($logoPath) ?>" alt="Logo" style="height: 40px; width: auto; max-width: 40px;">
+                <img src="<?= url($logoPath) ?>?v=<?= time() ?>" alt="Logo">
             <?php else: ?>
                 <i class="bi bi-pc-display"></i>
+                <h1>Parc Info</h1>
             <?php endif; ?>
-            <h1>Parc Info</h1>
         </div>
         <nav class="sidebar-nav">
             <?php
@@ -468,6 +538,9 @@
                 </a>
                 <a href="<?= url('settings') ?>" class="<?= str_contains($uriLower, '/settings') ? 'active' : '' ?>">
                     <i class="bi bi-gear"></i> Paramètres
+                </a>
+                <a href="<?= url('about') ?>" class="<?= str_contains($uriLower, '/about') ? 'active' : '' ?>">
+                    <i class="bi bi-info-circle"></i> À propos
                 </a>
             <?php endif; ?>
         </nav>
