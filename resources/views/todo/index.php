@@ -4,7 +4,11 @@
 /** @var array $filters */
 /** @var array $users */
 /** @var array $alerts */
+/** @var array $history */
 ?>
+
+<!-- 🆕 Chart.js pour le graphique d'historique -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
     .todo-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 16px; margin-bottom: 24px; }
@@ -104,6 +108,57 @@
     .days-today { background: #ffedd5; color: #7c2d12; }
     .days-soon { background: #fef3c7; color: #78350f; }
 
+    /* 🆕 Graphique d'historique */
+    .history-card {
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .history-card h5 {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+    }
+    .history-chart-wrapper {
+        position: relative;
+        height: 260px;
+    }
+    .history-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: #94a3b8;
+    }
+    .history-empty i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+    .history-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--bs-border-color);
+    }
+    .history-stat { text-align: center; }
+    .history-stat .value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #667eea;
+    }
+    .history-stat .label {
+        font-size: 0.7rem;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
     .stat-mini { background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 16px; text-align: center; }
     .stat-mini .value { font-size: 1.8rem; font-weight: 800; color: #667eea; line-height: 1; }
@@ -169,7 +224,7 @@
     .no-results i { font-size: 3rem; margin-bottom: 15px; }
 </style>
 
-<!-- ============ 🆕 BANDEAUX D'ALERTES ============ -->
+<!-- ============ BANDEAUX D'ALERTES ============ -->
 <?php if (!empty($alerts['counts']['total'])): ?>
 
     <!-- Alerte RETARD -->
@@ -352,6 +407,58 @@
     </form>
 </div>
 
+<!-- ============ 🆕 GRAPHIQUE D'HISTORIQUE ============ -->
+<?php if (isset($history) && !empty($history['snapshots'])): ?>
+<div class="history-card">
+    <h5>
+        <i class="bi bi-graph-up-arrow text-primary"></i>
+        Évolution sur les 30 derniers jours
+    </h5>
+
+    <?php if (count($history['snapshots']) < 2): ?>
+        <div class="history-empty">
+            <i class="bi bi-graph-up"></i>
+            <h6>Pas encore assez de données</h6>
+            <p class="mb-0 small">
+                Le graphique se remplira automatiquement au fil des jours.
+                <br>Reviens demain pour voir la progression !
+            </p>
+        </div>
+    <?php else: ?>
+        <div class="history-chart-wrapper">
+            <canvas id="historyChart"></canvas>
+        </div>
+
+        <?php
+        $snapshots = $history['snapshots'];
+        $first = $snapshots[0];
+        $last  = end($snapshots);
+        $gain  = $last['done'] - $first['done'];
+        $days  = count($snapshots);
+        $avgPerDay = $days > 1 ? round($gain / ($days - 1), 1) : 0;
+        ?>
+        <div class="history-stats">
+            <div class="history-stat">
+                <div class="value"><?= $gain >= 0 ? '+' : '' ?><?= $gain ?></div>
+                <div class="label">Tâches terminées</div>
+            </div>
+            <div class="history-stat">
+                <div class="value"><?= $avgPerDay ?></div>
+                <div class="label">Moy. / jour</div>
+            </div>
+            <div class="history-stat">
+                <div class="value"><?= $days ?></div>
+                <div class="label">Jours suivis</div>
+            </div>
+            <div class="history-stat">
+                <div class="value"><?= $last['percentage'] ?>%</div>
+                <div class="label">Progression actuelle</div>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
 <!-- ============ STATS ============ -->
 <h5 class="mb-3"><i class="bi bi-graph-up text-primary"></i> Statistiques du projet</h5>
 <div class="stats-grid">
@@ -532,7 +639,7 @@
 
 <!-- ============ SCRIPTS ============ -->
 <script>
-// ============ DONNÉES D'ALERTES (JSON pour le JS) ============
+// ============ DONNÉES D'ALERTES ============
 const ALERT_DATA = {
     late:  <?= json_encode($alerts['late'] ?? [],  JSON_UNESCAPED_UNICODE) ?>,
     today: <?= json_encode($alerts['today'] ?? [], JSON_UNESCAPED_UNICODE) ?>,
@@ -543,8 +650,7 @@ const ALERT_DATA = {
 document.querySelectorAll('.alert-banner[data-alert]').forEach(banner => {
     banner.addEventListener('click', function (e) {
         e.preventDefault();
-        const alertType = this.dataset.alert;
-        showAlertDetails(alertType);
+        showAlertDetails(this.dataset.alert);
     });
 });
 
@@ -561,8 +667,7 @@ function showAlertDetails(type) {
 
     let html = '';
     tasks.forEach(t => {
-        let daysClass = '';
-        let daysLabel = '';
+        let daysClass = '', daysLabel = '';
         if (t.days_left < 0) {
             daysClass = 'days-late';
             daysLabel = Math.abs(t.days_left) + 'j de retard';
@@ -682,4 +787,118 @@ async function saveTask() {
         alert('Erreur réseau : ' + err.message);
     }
 }
+
+// ============ 🆕 GRAPHIQUE D'HISTORIQUE ============
+<?php if (isset($history) && count($history['snapshots'] ?? []) >= 2): ?>
+(function() {
+    const canvas = document.getElementById('historyChart');
+    if (!canvas) return;
+
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const textColor = isDark ? '#e2e8f0' : '#1e293b';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+    Chart.defaults.color = textColor;
+    Chart.defaults.borderColor = gridColor;
+    Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($history['labels']) ?>,
+            datasets: [
+                {
+                    label: 'Tâches terminées',
+                    data: <?= json_encode($history['done']) ?>,
+                    borderColor: '#10b981',
+                    backgroundColor: gradient,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: isDark ? '#1e293b' : '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Progression (%)',
+                    data: <?= json_encode($history['percentage']) ?>,
+                    borderColor: '#667eea',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    fill: false,
+                    pointBackgroundColor: '#667eea',
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    yAxisID: 'y1',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 15,
+                        font: { size: 12, weight: '600' },
+                        usePointStyle: true,
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDark ? '#0f172a' : '#1e293b',
+                    titleColor: '#fff',
+                    bodyColor: '#e2e8f0',
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: true,
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Tâches terminées',
+                        font: { size: 11, weight: '600' },
+                    },
+                    grid: { color: gridColor },
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Progression (%)',
+                        font: { size: 11, weight: '600' },
+                    },
+                    grid: { drawOnChartArea: false },
+                    ticks: {
+                        callback: function(value) { return value + '%'; }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                }
+            }
+        }
+    });
+})();
+<?php endif; ?>
 </script>

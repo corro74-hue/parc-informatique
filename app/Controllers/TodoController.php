@@ -10,11 +10,9 @@ use App\Core\Response;
 
 final class TodoController extends Controller
 {
-    private const TODO_FILE = 'data/todo.json';
+    private const TODO_FILE    = 'data/todo.json';
+    private const HISTORY_FILE = 'data/todo-history.json';
 
-    /**
-     * Page principale du TODO avec filtres.
-     */
     public function index(Request $request): Response
     {
         $todo = $this->loadTodo();
@@ -25,12 +23,17 @@ final class TodoController extends Controller
             'type'     => (string) $request->get('type', 'all'),
             'module'   => (string) $request->get('module', 'all'),
             'assigned' => (string) $request->get('assigned', 'all'),
-            'alert'    => (string) $request->get('alert', 'all'), // 🆕 'late' | 'soon'
+            'alert'    => (string) $request->get('alert', 'all'),
         ];
 
         $stats   = $this->collectProjectStats();
-        $alerts  = $this->getAlerts($todo); // 🆕 Calcul des alertes
+        $alerts  = $this->getAlerts($todo);
         $todo    = $this->computeProgress($todo);
+
+        // 🆕 Sauvegarder un snapshot du jour
+        $this->saveSnapshot($todo);
+        $history = $this->getHistory(30); // 30 derniers jours
+
         $todo    = $this->applyFilters($todo, $filters);
         $users   = $this->loadActiveUsers();
 
@@ -40,13 +43,11 @@ final class TodoController extends Controller
             'stats'   => $stats,
             'filters' => $filters,
             'users'   => $users,
-            'alerts'  => $alerts, // 🆕
+            'alerts'  => $alerts,
+            'history' => $history, // 🆕
         ]);
     }
 
-    /**
-     * Basculer l'état d'une tâche (AJAX).
-     */
     public function toggle(Request $request): Response
     {
         $taskId   = trim((string) $request->input('task_id', ''));
@@ -81,6 +82,10 @@ final class TodoController extends Controller
             $todo['last_update'] = date('Y-m-d');
             $this->saveTodo($todo);
 
+            // 🆕 Mettre à jour le snapshot du jour
+            $progress = $this->computeProgress($this->loadTodo());
+            $this->saveSnapshot($progress, true);
+
             return Response::json([
                 'success' => true,
                 'done'    => $newState,
@@ -91,9 +96,6 @@ final class TodoController extends Controller
         }
     }
 
-    /**
-     * Mettre à jour les métadonnées d'une tâche (deadline + assignation).
-     */
     public function updateTask(Request $request): Response
     {
         $taskId   = trim((string) $request->input('task_id', ''));
@@ -113,16 +115,12 @@ final class TodoController extends Controller
                 if ($module['id'] !== $moduleId) continue;
                 foreach ($module['tasks'] as &$task) {
                     if ($task['id'] === $taskId) {
-                        if ($deadline === '') {
-                            unset($task['deadline']);
-                        } else {
-                            $task['deadline'] = $deadline;
-                        }
-                        if ($assigned === '' || $assigned === '0') {
-                            unset($task['assigned_to']);
-                        } else {
-                            $task['assigned_to'] = (int) $assigned;
-                        }
+                        if ($deadline === '') unset($task['deadline']);
+                        else $task['deadline'] = $deadline;
+
+                        if ($assigned === '' || $assigned === '0') unset($task['assigned_to']);
+                        else $task['assigned_to'] = (int) $assigned;
+
                         $found = true;
                         break 2;
                     }
@@ -143,9 +141,6 @@ final class TodoController extends Controller
         }
     }
 
-    /**
-     * Remettre toutes les tâches à zéro (reset).
-     */
     public function reset(Request $request): Response
     {
         try {
@@ -166,33 +161,121 @@ final class TodoController extends Controller
     }
 
     // ============================================
-    // 🆕 SYSTÈME D'ALERTES
+    // 🆕 HISTORIQUE
     // ============================================
 
+    private function historyPath(): string
+    {
+        return dirname(__DIR__, 2) . '/' . self::HISTORY_FILE;
+    }
+
+    private function loadHistory(): array
+    {
+        $path = $this->historyPath();
+
+        if (!is_file($path)) {
+            return ['snapshots' => []];
+        }
+
+        $json = file_get_contents($path);
+        $data = json_decode($json, true);
+
+        if (!is_array($data) || !isset($data['snapshots'])) {
+            return ['snapshots' => []];
+        }
+
+        return $data;
+    }
+
+    private function saveHistory(array $data): void
+    {
+        $path = $this->historyPath();
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        file_put_contents($path, $json);
+    }
+
     /**
-     * Calcule les alertes sur les deadlines.
-     *
-     * Retourne un tableau structuré :
-     *   - late : tâches en retard (deadline < aujourd'hui)
-     *   - soon : tâches à échéance proche (< 3 jours)
-     *   - today : tâches à échéance aujourd'hui
-     *
-     * @return array{late: array, soon: array, today: array, counts: array}
+     * Sauvegarde un snapshot du jour (ou le met à jour si déjà existant).
      */
+    private function saveSnapshot(array $todo, bool $force = false): void
+    {
+        try {
+            $today = date('Y-m-d');
+            $history = $this->loadHistory();
+
+            $snapshot = [
+                'date'       => $today,
+                'done'       => (int) $todo['done'],
+                'total'      => (int) $todo['total'],
+                'percentage' => (int) $todo['percentage'],
+            ];
+
+            // Chercher si un snapshot du jour existe déjà
+            $found = false;
+            foreach ($history['snapshots'] as &$s) {
+                if ($s['date'] === $today) {
+                    // Mettre à jour seulement si force ou valeurs différentes
+                    if ($force || $s['done'] !== $snapshot['done']) {
+                        $s = $snapshot;
+                    }
+                    $found = true;
+                    break;
+                }
+            }
+            unset($s);
+
+            // Sinon, ajouter
+            if (!$found) {
+                $history['snapshots'][] = $snapshot;
+            }
+
+            // Trier par date
+            usort($history['snapshots'], fn($a, $b) => strcmp($a['date'], $b['date']));
+
+            // Garder les 365 derniers jours max
+            if (count($history['snapshots']) > 365) {
+                $history['snapshots'] = array_slice($history['snapshots'], -365);
+            }
+
+            $this->saveHistory($history);
+        } catch (\Throwable $e) {
+            error_log('TodoController::saveSnapshot erreur : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Retourne les N derniers jours d'historique.
+     */
+    private function getHistory(int $days = 30): array
+    {
+        $history = $this->loadHistory();
+        $snapshots = $history['snapshots'] ?? [];
+
+        // Garder les N derniers jours
+        if (count($snapshots) > $days) {
+            $snapshots = array_slice($snapshots, -$days);
+        }
+
+        return [
+            'snapshots' => $snapshots,
+            'labels'    => array_map(fn($s) => date('d/m', strtotime($s['date'])), $snapshots),
+            'done'      => array_column($snapshots, 'done'),
+            'percentage'=> array_column($snapshots, 'percentage'),
+        ];
+    }
+
+    // ============================================
+    // SYSTÈME D'ALERTES
+    // ============================================
+
     private function getAlerts(array $todo): array
     {
-        $late  = [];
-        $soon  = [];
-        $today = [];
-
-        $now = strtotime(date('Y-m-d'));
+        $late = $soon = $today = [];
+        $now  = strtotime(date('Y-m-d'));
 
         foreach ($todo['modules'] as $module) {
             foreach ($module['tasks'] as $task) {
-                // Ignorer les tâches terminées
                 if (!empty($task['done'])) continue;
-
-                // Ignorer les tâches sans deadline
                 if (empty($task['deadline'])) continue;
 
                 $deadlineTs = strtotime($task['deadline']);
@@ -210,17 +293,12 @@ final class TodoController extends Controller
                     'type'       => $task['type'] ?? 'feature',
                 ];
 
-                if ($daysLeft < 0) {
-                    $late[] = $taskInfo;
-                } elseif ($daysLeft === 0) {
-                    $today[] = $taskInfo;
-                } elseif ($daysLeft <= 3) {
-                    $soon[] = $taskInfo;
-                }
+                if ($daysLeft < 0) $late[] = $taskInfo;
+                elseif ($daysLeft === 0) $today[] = $taskInfo;
+                elseif ($daysLeft <= 3) $soon[] = $taskInfo;
             }
         }
 
-        // Trier : late par retard décroissant, soon par échéance croissante
         usort($late, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
         usort($soon, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
 
@@ -287,12 +365,9 @@ final class TodoController extends Controller
 
     private function applyFilters(array $todo, array $filters): array
     {
-        if ($filters['search'] === ''
-            && $filters['status'] === 'all'
-            && $filters['type'] === 'all'
-            && $filters['module'] === 'all'
-            && $filters['assigned'] === 'all'
-            && $filters['alert'] === 'all') {
+        if ($filters['search'] === '' && $filters['status'] === 'all'
+            && $filters['type'] === 'all' && $filters['module'] === 'all'
+            && $filters['assigned'] === 'all' && $filters['alert'] === 'all') {
             return $todo;
         }
 
@@ -300,21 +375,16 @@ final class TodoController extends Controller
         $filteredModules = [];
         $totalFiltered = 0;
         $doneFiltered = 0;
-
         $now = strtotime(date('Y-m-d'));
 
         foreach ($todo['modules'] as $module) {
-            if ($filters['module'] !== 'all' && $module['id'] !== $filters['module']) {
-                continue;
-            }
+            if ($filters['module'] !== 'all' && $module['id'] !== $filters['module']) continue;
 
             $filteredTasks = [];
-
             foreach ($module['tasks'] as $task) {
                 if ($searchLower !== '') {
                     if (!str_contains(mb_strtolower($task['label']), $searchLower)) continue;
                 }
-
                 $isDone = !empty($task['done']);
                 if ($filters['status'] === 'done' && !$isDone) continue;
                 if ($filters['status'] === 'pending' && $isDone) continue;
@@ -327,15 +397,12 @@ final class TodoController extends Controller
                     if ($assignedTo !== $filters['assigned']) continue;
                 }
 
-                // 🆕 Filtre par alerte
                 if ($filters['alert'] !== 'all') {
-                    if ($isDone) continue; // Les alertes concernent les tâches non finies
+                    if ($isDone) continue;
                     if (empty($task['deadline'])) continue;
-
                     $deadlineTs = strtotime($task['deadline']);
                     if ($deadlineTs === false) continue;
                     $daysLeft = (int) floor(($deadlineTs - $now) / 86400);
-
                     if ($filters['alert'] === 'late' && $daysLeft >= 0) continue;
                     if ($filters['alert'] === 'soon' && $daysLeft > 3) continue;
                 }
@@ -357,7 +424,6 @@ final class TodoController extends Controller
         $todo['filtered_total'] = $totalFiltered;
         $todo['filtered_done'] = $doneFiltered;
         $todo['is_filtered'] = true;
-
         return $todo;
     }
 
@@ -384,14 +450,12 @@ final class TodoController extends Controller
         $todo['done']       = $doneAll;
         $todo['percentage'] = $totalAll > 0 ? (int) round(($doneAll / $totalAll) * 100) : 0;
         $todo['is_filtered'] = false;
-
         return $todo;
     }
 
     private function collectProjectStats(): array
     {
         $root = dirname(__DIR__, 2);
-
         $stats = [
             'controllers' => $this->countFiles("$root/app/Controllers", '*.php', true),
             'models'      => $this->countFiles("$root/app/Models", '*.php'),
@@ -427,7 +491,6 @@ final class TodoController extends Controller
 
         $stats['project_size'] = $this->humanSize($this->dirSize("$root/app") + $this->dirSize("$root/resources"));
         $stats['storage_size'] = $this->humanSize($this->dirSize("$root/storage"));
-
         return $stats;
     }
 
