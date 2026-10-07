@@ -20,14 +20,16 @@ final class TodoController extends Controller
         $todo = $this->loadTodo();
 
         $filters = [
-            'search'  => trim((string) $request->get('search', '')),
-            'status'  => (string) $request->get('status', 'all'),
-            'type'    => (string) $request->get('type', 'all'),
-            'module'  => (string) $request->get('module', 'all'),
-            'assigned'=> (string) $request->get('assigned', 'all'), // 🆕 Filtre par utilisateur
+            'search'   => trim((string) $request->get('search', '')),
+            'status'   => (string) $request->get('status', 'all'),
+            'type'     => (string) $request->get('type', 'all'),
+            'module'   => (string) $request->get('module', 'all'),
+            'assigned' => (string) $request->get('assigned', 'all'),
+            'alert'    => (string) $request->get('alert', 'all'), // 🆕 'late' | 'soon'
         ];
 
         $stats   = $this->collectProjectStats();
+        $alerts  = $this->getAlerts($todo); // 🆕 Calcul des alertes
         $todo    = $this->computeProgress($todo);
         $todo    = $this->applyFilters($todo, $filters);
         $users   = $this->loadActiveUsers();
@@ -38,6 +40,7 @@ final class TodoController extends Controller
             'stats'   => $stats,
             'filters' => $filters,
             'users'   => $users,
+            'alerts'  => $alerts, // 🆕
         ]);
     }
 
@@ -89,7 +92,7 @@ final class TodoController extends Controller
     }
 
     /**
-     * 🆕 Mettre à jour les métadonnées d'une tâche (deadline + assignation).
+     * Mettre à jour les métadonnées d'une tâche (deadline + assignation).
      */
     public function updateTask(Request $request): Response
     {
@@ -110,13 +113,11 @@ final class TodoController extends Controller
                 if ($module['id'] !== $moduleId) continue;
                 foreach ($module['tasks'] as &$task) {
                     if ($task['id'] === $taskId) {
-                        // Deadline
                         if ($deadline === '') {
                             unset($task['deadline']);
                         } else {
                             $task['deadline'] = $deadline;
                         }
-                        // Assignation
                         if ($assigned === '' || $assigned === '0') {
                             unset($task['assigned_to']);
                         } else {
@@ -136,10 +137,7 @@ final class TodoController extends Controller
             $todo['last_update'] = date('Y-m-d');
             $this->saveTodo($todo);
 
-            return Response::json([
-                'success' => true,
-                'message' => 'Tâche mise à jour ✅',
-            ]);
+            return Response::json(['success' => true, 'message' => 'Tâche mise à jour ✅']);
         } catch (\Throwable $e) {
             return Response::json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -160,13 +158,83 @@ final class TodoController extends Controller
             unset($module, $task);
             $todo['last_update'] = date('Y-m-d');
             $this->saveTodo($todo);
-
             flash('success', 'Toutes les tâches ont été réinitialisées.');
         } catch (\Throwable $e) {
             flash('error', 'Erreur : ' . $e->getMessage());
         }
-
         return Response::redirect(url('todo'));
+    }
+
+    // ============================================
+    // 🆕 SYSTÈME D'ALERTES
+    // ============================================
+
+    /**
+     * Calcule les alertes sur les deadlines.
+     *
+     * Retourne un tableau structuré :
+     *   - late : tâches en retard (deadline < aujourd'hui)
+     *   - soon : tâches à échéance proche (< 3 jours)
+     *   - today : tâches à échéance aujourd'hui
+     *
+     * @return array{late: array, soon: array, today: array, counts: array}
+     */
+    private function getAlerts(array $todo): array
+    {
+        $late  = [];
+        $soon  = [];
+        $today = [];
+
+        $now = strtotime(date('Y-m-d'));
+
+        foreach ($todo['modules'] as $module) {
+            foreach ($module['tasks'] as $task) {
+                // Ignorer les tâches terminées
+                if (!empty($task['done'])) continue;
+
+                // Ignorer les tâches sans deadline
+                if (empty($task['deadline'])) continue;
+
+                $deadlineTs = strtotime($task['deadline']);
+                if ($deadlineTs === false) continue;
+
+                $daysLeft = (int) floor(($deadlineTs - $now) / 86400);
+
+                $taskInfo = [
+                    'id'         => $task['id'],
+                    'label'      => $task['label'],
+                    'deadline'   => $task['deadline'],
+                    'days_left'  => $daysLeft,
+                    'module_id'  => $module['id'],
+                    'module_name'=> $module['name'],
+                    'type'       => $task['type'] ?? 'feature',
+                ];
+
+                if ($daysLeft < 0) {
+                    $late[] = $taskInfo;
+                } elseif ($daysLeft === 0) {
+                    $today[] = $taskInfo;
+                } elseif ($daysLeft <= 3) {
+                    $soon[] = $taskInfo;
+                }
+            }
+        }
+
+        // Trier : late par retard décroissant, soon par échéance croissante
+        usort($late, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
+        usort($soon, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
+
+        return [
+            'late'   => $late,
+            'soon'   => $soon,
+            'today'  => $today,
+            'counts' => [
+                'late'  => count($late),
+                'soon'  => count($soon),
+                'today' => count($today),
+                'total' => count($late) + count($soon) + count($today),
+            ],
+        ];
     }
 
     // ============================================
@@ -201,9 +269,6 @@ final class TodoController extends Controller
         }
     }
 
-    /**
-     * 🆕 Charge les utilisateurs actifs (pour la liste d'assignation).
-     */
     private function loadActiveUsers(): array
     {
         try {
@@ -226,7 +291,8 @@ final class TodoController extends Controller
             && $filters['status'] === 'all'
             && $filters['type'] === 'all'
             && $filters['module'] === 'all'
-            && $filters['assigned'] === 'all') {
+            && $filters['assigned'] === 'all'
+            && $filters['alert'] === 'all') {
             return $todo;
         }
 
@@ -234,6 +300,8 @@ final class TodoController extends Controller
         $filteredModules = [];
         $totalFiltered = 0;
         $doneFiltered = 0;
+
+        $now = strtotime(date('Y-m-d'));
 
         foreach ($todo['modules'] as $module) {
             if ($filters['module'] !== 'all' && $module['id'] !== $filters['module']) {
@@ -254,10 +322,22 @@ final class TodoController extends Controller
                 $taskType = $task['type'] ?? 'feature';
                 if ($filters['type'] !== 'all' && $taskType !== $filters['type']) continue;
 
-                // 🆕 Filtre par assignation
                 if ($filters['assigned'] !== 'all') {
                     $assignedTo = (string)($task['assigned_to'] ?? '');
                     if ($assignedTo !== $filters['assigned']) continue;
+                }
+
+                // 🆕 Filtre par alerte
+                if ($filters['alert'] !== 'all') {
+                    if ($isDone) continue; // Les alertes concernent les tâches non finies
+                    if (empty($task['deadline'])) continue;
+
+                    $deadlineTs = strtotime($task['deadline']);
+                    if ($deadlineTs === false) continue;
+                    $daysLeft = (int) floor(($deadlineTs - $now) / 86400);
+
+                    if ($filters['alert'] === 'late' && $daysLeft >= 0) continue;
+                    if ($filters['alert'] === 'soon' && $daysLeft > 3) continue;
                 }
 
                 $filteredTasks[] = $task;

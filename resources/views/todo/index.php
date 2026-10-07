@@ -3,6 +3,7 @@
 /** @var array $stats */
 /** @var array $filters */
 /** @var array $users */
+/** @var array $alerts */
 ?>
 
 <style>
@@ -14,47 +15,106 @@
     .progress-main .progress { height: 32px; border-radius: 16px; background: rgba(255,255,255,0.2); }
     .progress-main .progress-bar { font-size: 1rem; font-weight: 700; line-height: 32px; }
 
+    /* 🆕 ALERTES */
+    .alert-banner {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: 2px solid transparent;
+    }
+    .alert-banner:hover { transform: translateY(-2px); text-decoration: none; }
+    .alert-banner.alert-late {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        border-color: #ef4444;
+        color: #7f1d1d;
+    }
+    .alert-banner.alert-today {
+        background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+        border-color: #f97316;
+        color: #7c2d12;
+    }
+    .alert-banner.alert-soon {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-color: #f59e0b;
+        color: #78350f;
+    }
+    [data-bs-theme="dark"] .alert-banner.alert-late { background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); color: #fee2e2; }
+    [data-bs-theme="dark"] .alert-banner.alert-today { background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%); color: #fed7aa; }
+    [data-bs-theme="dark"] .alert-banner.alert-soon { background: linear-gradient(135deg, #78350f 0%, #92400e 100%); color: #fde68a; }
+
+    .alert-banner .alert-icon { font-size: 2rem; }
+    .alert-banner .alert-content { flex: 1; }
+    .alert-banner .alert-title { font-weight: 800; font-size: 1.05rem; margin-bottom: 2px; }
+    .alert-banner .alert-subtitle { font-size: 0.85rem; opacity: 0.85; }
+    .alert-banner .alert-action {
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.5);
+    }
+    .alert-banner:hover .alert-action { background: rgba(255,255,255,0.85); }
+
+    /* Alerte : liste détaillée (collapsible) */
+    .alert-details {
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 10px;
+        padding: 0;
+        margin-bottom: 20px;
+        overflow: hidden;
+        display: none;
+    }
+    .alert-details.show { display: block; }
+    .alert-details-header {
+        padding: 12px 18px;
+        background: rgba(102,126,234,0.08);
+        font-weight: 700;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .alert-details-list { max-height: 300px; overflow-y: auto; }
+    .alert-detail-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 18px;
+        border-bottom: 1px solid var(--bs-border-color);
+        font-size: 0.9rem;
+    }
+    .alert-detail-item:last-child { border-bottom: none; }
+    .alert-detail-item:hover { background: rgba(102,126,234,0.05); }
+    .alert-detail-days {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+    .days-late { background: #fee2e2; color: #991b1b; }
+    .days-today { background: #ffedd5; color: #7c2d12; }
+    .days-soon { background: #fef3c7; color: #78350f; }
+
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
     .stat-mini { background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 16px; text-align: center; }
     .stat-mini .value { font-size: 1.8rem; font-weight: 800; color: #667eea; line-height: 1; }
     .stat-mini .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-top: 6px; }
 
-    .filters-bar {
-        background: var(--bs-body-bg);
-        border: 2px solid #667eea;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 20px;
-    }
-    .filters-bar .form-label {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #64748b;
-        letter-spacing: 0.5px;
-        margin-bottom: 4px;
-    }
-    .filters-bar .form-control,
-    .filters-bar .form-select {
-        border-radius: 8px;
-        border: 1px solid var(--bs-border-color);
-        font-size: 0.85rem;
-    }
-    .filters-bar .form-control:focus,
-    .filters-bar .form-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
-    }
+    .filters-bar { background: var(--bs-body-bg); border: 2px solid #667eea; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+    .filters-bar .form-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .filters-bar .form-control, .filters-bar .form-select { border-radius: 8px; border: 1px solid var(--bs-border-color); font-size: 0.85rem; }
+    .filters-bar .form-control:focus, .filters-bar .form-select:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
 
-    .filter-info {
-        background: #dbeafe;
-        border-left: 4px solid #3b82f6;
-        padding: 12px 16px;
-        border-radius: 8px;
-        margin-bottom: 16px;
-        color: #1e40af;
-        font-size: 0.9rem;
-    }
+    .filter-info { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; color: #1e40af; font-size: 0.9rem; }
     [data-bs-theme="dark"] .filter-info { background: #1e3a8a; color: #dbeafe; }
 
     .module-card { background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
@@ -65,18 +125,14 @@
     .module-progress { display: flex; align-items: center; gap: 12px; }
     .module-progress .mini-bar { width: 120px; height: 6px; background: rgba(0,0,0,0.08); border-radius: 3px; overflow: hidden; }
     .module-progress .mini-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
-
     .module-body { padding: 8px 20px 20px; }
 
-    /* 🆕 Layout avec deadline + avatar à droite */
     .task-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; transition: all 0.15s; margin-bottom: 4px; }
     .task-item:hover { background: rgba(102,126,234,0.05); }
     .task-item .form-check-input { width: 20px; height: 20px; cursor: pointer; }
     .task-item .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
     .task-item.done .task-label { text-decoration: line-through; color: #94a3b8; }
-
     .task-label { cursor: pointer; flex: 1; }
-
     .task-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
     .task-type-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -92,57 +148,99 @@
     [data-bs-theme="dark"] .type-bug     { background: #831843; color: #fce7f3; }
     [data-bs-theme="dark"] .type-deploy  { background: #312e81; color: #e0e7ff; }
 
-    /* 🆕 Deadlines */
-    .deadline-badge {
-        font-size: 0.7rem;
-        padding: 3px 8px;
-        border-radius: 8px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
+    .deadline-badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
     .deadline-ok      { background: #d1fae5; color: #065f46; }
     .deadline-soon    { background: #fef3c7; color: #92400e; }
     .deadline-late    { background: #fee2e2; color: #991b1b; }
-    .deadline-none    { background: #f1f5f9; color: #94a3b8; }
+    .deadline-today   { background: #ffedd5; color: #7c2d12; }
 
-    [data-bs-theme="dark"] .deadline-ok   { background: #064e3b; color: #d1fae5; }
-    [data-bs-theme="dark"] .deadline-soon { background: #78350f; color: #fef3c7; }
-    [data-bs-theme="dark"] .deadline-late { background: #7f1d1d; color: #fee2e2; }
-    [data-bs-theme="dark"] .deadline-none { background: #334155; color: #94a3b8; }
+    [data-bs-theme="dark"] .deadline-ok    { background: #064e3b; color: #d1fae5; }
+    [data-bs-theme="dark"] .deadline-soon  { background: #78350f; color: #fef3c7; }
+    [data-bs-theme="dark"] .deadline-late  { background: #7f1d1d; color: #fee2e2; }
+    [data-bs-theme="dark"] .deadline-today { background: #7c2d12; color: #ffedd5; }
 
-    /* 🆕 Avatars */
-    .avatar-mini {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.7rem;
-        flex-shrink: 0;
-    }
+    .avatar-mini { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem; flex-shrink: 0; }
 
-    .edit-task-btn {
-        background: transparent;
-        border: none;
-        color: #94a3b8;
-        cursor: pointer;
-        padding: 4px 6px;
-        border-radius: 6px;
-        opacity: 0;
-        transition: all 0.15s;
-    }
+    .edit-task-btn { background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 4px 6px; border-radius: 6px; opacity: 0; transition: all 0.15s; }
     .task-item:hover .edit-task-btn { opacity: 1; }
     .edit-task-btn:hover { background: rgba(102,126,234,0.15); color: #667eea; }
 
     .no-results { text-align: center; padding: 60px 20px; color: #94a3b8; }
     .no-results i { font-size: 3rem; margin-bottom: 15px; }
 </style>
+
+<!-- ============ 🆕 BANDEAUX D'ALERTES ============ -->
+<?php if (!empty($alerts['counts']['total'])): ?>
+
+    <!-- Alerte RETARD -->
+    <?php if ($alerts['counts']['late'] > 0): ?>
+        <a href="?alert=late" class="alert-banner alert-late" data-alert="late">
+            <i class="bi bi-exclamation-octagon-fill alert-icon"></i>
+            <div class="alert-content">
+                <div class="alert-title">
+                    🚨 <?= $alerts['counts']['late'] ?> tâche(s) en retard
+                </div>
+                <div class="alert-subtitle">
+                    Ces tâches ont dépassé leur date limite et doivent être traitées en priorité.
+                </div>
+            </div>
+            <span class="alert-action">Voir →</span>
+        </a>
+    <?php endif; ?>
+
+    <!-- Alerte AUJOURD'HUI -->
+    <?php if ($alerts['counts']['today'] > 0): ?>
+        <a href="?alert=today" class="alert-banner alert-today" data-alert="today">
+            <i class="bi bi-clock-fill alert-icon"></i>
+            <div class="alert-content">
+                <div class="alert-title">
+                    ⏰ <?= $alerts['counts']['today'] ?> tâche(s) à faire aujourd'hui
+                </div>
+                <div class="alert-subtitle">
+                    Échéance fixée à aujourd'hui — dernière ligne droite !
+                </div>
+            </div>
+            <span class="alert-action">Voir →</span>
+        </a>
+    <?php endif; ?>
+
+    <!-- Alerte BIENTÔT -->
+    <?php if ($alerts['counts']['soon'] > 0): ?>
+        <a href="?alert=soon" class="alert-banner alert-soon" data-alert="soon">
+            <i class="bi bi-hourglass-split alert-icon"></i>
+            <div class="alert-content">
+                <div class="alert-title">
+                    ⚠️ <?= $alerts['counts']['soon'] ?> tâche(s) à échéance dans moins de 3 jours
+                </div>
+                <div class="alert-subtitle">
+                    Anticipe pour éviter le retard.
+                </div>
+            </div>
+            <span class="alert-action">Voir →</span>
+        </a>
+    <?php endif; ?>
+
+    <!-- Liste détaillée (collapsible) -->
+    <div class="alert-details" id="alertDetails">
+        <div class="alert-details-header">
+            <span><i class="bi bi-list-ul"></i> Détail des tâches concernées</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeAlertDetails()">
+                <i class="bi bi-x-lg"></i> Fermer
+            </button>
+        </div>
+        <div class="alert-details-list" id="alertDetailsList"></div>
+    </div>
+
+<?php else: ?>
+    <!-- Message positif si aucune alerte -->
+    <div class="alert-banner" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-color: #10b981; color: #065f46; cursor: default;">
+        <i class="bi bi-check-circle-fill alert-icon"></i>
+        <div class="alert-content">
+            <div class="alert-title">✨ Aucune alerte</div>
+            <div class="alert-subtitle">Toutes les deadlines sont respectées. Continue comme ça !</div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <!-- ============ HEADER ============ -->
 <div class="todo-header">
@@ -244,7 +342,7 @@
                 <button type="submit" class="btn btn-primary flex-fill" title="Filtrer">
                     <i class="bi bi-funnel"></i>
                 </button>
-                <?php if ($filters['search'] || $filters['status'] !== 'all' || $filters['type'] !== 'all' || $filters['module'] !== 'all' || $filters['assigned'] !== 'all'): ?>
+                <?php if ($filters['search'] || $filters['status'] !== 'all' || $filters['type'] !== 'all' || $filters['module'] !== 'all' || $filters['assigned'] !== 'all' || $filters['alert'] !== 'all'): ?>
                     <a href="<?= url('todo') ?>" class="btn btn-outline-secondary" title="Reset">
                         <i class="bi bi-x"></i>
                     </a>
@@ -320,25 +418,26 @@
                         $done = !empty($task['done']);
                         $type = $task['type'] ?? 'feature';
                         
-                        // 🆕 Calcul deadline
                         $deadline = $task['deadline'] ?? null;
                         $deadlineLabel = '';
-                        $deadlineClass = 'deadline-none';
+                        $deadlineClass = '';
                         if ($deadline) {
                             $daysLeft = (int) floor((strtotime($deadline) - time()) / 86400);
                             if ($daysLeft < 0) {
                                 $deadlineClass = 'deadline-late';
                                 $deadlineLabel = abs($daysLeft) . 'j de retard';
+                            } elseif ($daysLeft === 0) {
+                                $deadlineClass = 'deadline-today';
+                                $deadlineLabel = "Aujourd'hui";
                             } elseif ($daysLeft <= 3) {
                                 $deadlineClass = 'deadline-soon';
-                                $deadlineLabel = $daysLeft === 0 ? "Aujourd'hui" : $daysLeft . 'j restants';
+                                $deadlineLabel = $daysLeft . 'j restants';
                             } else {
                                 $deadlineClass = 'deadline-ok';
                                 $deadlineLabel = date('d/m', strtotime($deadline));
                             }
                         }
                         
-                        // 🆕 Trouver l'utilisateur assigné
                         $assignedTo = $task['assigned_to'] ?? null;
                         $assignedUser = null;
                         if ($assignedTo) {
@@ -360,14 +459,12 @@
                             <span class="task-label"><?= e($task['label']) ?></span>
                             
                             <div class="task-actions">
-                                <!-- 🆕 Deadline -->
                                 <?php if ($deadline): ?>
                                     <span class="deadline-badge <?= $deadlineClass ?>">
                                         <i class="bi bi-calendar-event"></i> <?= e($deadlineLabel) ?>
                                     </span>
                                 <?php endif; ?>
                                 
-                                <!-- 🆕 Avatar -->
                                 <?php if ($assignedUser): 
                                     $initial = strtoupper(mb_substr($assignedUser['first_name'] ?: $assignedUser['username'], 0, 1));
                                     $fullName = trim(($assignedUser['first_name'] ?? '') . ' ' . ($assignedUser['last_name'] ?? ''));
@@ -376,10 +473,8 @@
                                     <span class="avatar-mini" title="<?= e($fullName) ?>"><?= e($initial) ?></span>
                                 <?php endif; ?>
                                 
-                                <!-- Badge type -->
                                 <span class="task-type-badge type-<?= e($type) ?>"><?= e($type) ?></span>
                                 
-                                <!-- 🆕 Bouton Éditer -->
                                 <button type="button" class="edit-task-btn" 
                                         onclick="openEditModal('<?= e($task['id']) ?>', '<?= e($module['id']) ?>', '<?= e($task['label']) ?>', '<?= e($deadline ?? '') ?>', '<?= e((string)($assignedTo ?? '')) ?>')"
                                         title="Modifier">
@@ -408,16 +503,12 @@
                     <p class="fw-bold mb-0" id="modal-task-label">—</p>
                 </div>
                 <div class="mb-3">
-                    <label for="modal-deadline" class="form-label">
-                        <i class="bi bi-calendar-event"></i> Date limite
-                    </label>
+                    <label for="modal-deadline" class="form-label"><i class="bi bi-calendar-event"></i> Date limite</label>
                     <input type="date" id="modal-deadline" class="form-control">
                     <small class="text-muted">Laisser vide pour supprimer la deadline.</small>
                 </div>
                 <div class="mb-0">
-                    <label for="modal-assigned" class="form-label">
-                        <i class="bi bi-person"></i> Assigné à
-                    </label>
+                    <label for="modal-assigned" class="form-label"><i class="bi bi-person"></i> Assigné à</label>
                     <select id="modal-assigned" class="form-select">
                         <option value="">— Non assigné —</option>
                         <?php foreach ($users as $u): 
@@ -441,11 +532,82 @@
 
 <!-- ============ SCRIPTS ============ -->
 <script>
+// ============ DONNÉES D'ALERTES (JSON pour le JS) ============
+const ALERT_DATA = {
+    late:  <?= json_encode($alerts['late'] ?? [],  JSON_UNESCAPED_UNICODE) ?>,
+    today: <?= json_encode($alerts['today'] ?? [], JSON_UNESCAPED_UNICODE) ?>,
+    soon:  <?= json_encode($alerts['soon'] ?? [],  JSON_UNESCAPED_UNICODE) ?>
+};
+
+// ============ BANDEAUX D'ALERTES CLIQUABLES ============
+document.querySelectorAll('.alert-banner[data-alert]').forEach(banner => {
+    banner.addEventListener('click', function (e) {
+        e.preventDefault();
+        const alertType = this.dataset.alert;
+        showAlertDetails(alertType);
+    });
+});
+
+function showAlertDetails(type) {
+    const list = document.getElementById('alertDetailsList');
+    const box  = document.getElementById('alertDetails');
+    const tasks = ALERT_DATA[type] || [];
+
+    if (tasks.length === 0) {
+        list.innerHTML = '<div class="alert-detail-item">Aucune tâche.</div>';
+        box.classList.add('show');
+        return;
+    }
+
+    let html = '';
+    tasks.forEach(t => {
+        let daysClass = '';
+        let daysLabel = '';
+        if (t.days_left < 0) {
+            daysClass = 'days-late';
+            daysLabel = Math.abs(t.days_left) + 'j de retard';
+        } else if (t.days_left === 0) {
+            daysClass = 'days-today';
+            daysLabel = "Aujourd'hui";
+        } else {
+            daysClass = 'days-soon';
+            daysLabel = t.days_left + 'j';
+        }
+
+        html += `
+            <div class="alert-detail-item">
+                <span class="alert-detail-days ${daysClass}">${daysLabel}</span>
+                <div style="flex: 1;">
+                    <strong>${escapeHtml(t.label)}</strong>
+                    <div style="font-size: 0.75rem; color: #94a3b8;">
+                        <i class="bi bi-folder"></i> ${escapeHtml(t.module_name)}
+                        · <i class="bi bi-calendar-event"></i> ${t.deadline}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    list.innerHTML = html;
+    box.classList.add('show');
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeAlertDetails() {
+    document.getElementById('alertDetails').classList.remove('show');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============ MODAL D'ÉDITION ============
 let editModalInstance = null;
 let currentTaskId = null;
 let currentModuleId = null;
 
-// ============ TOGGLE (cocher/décocher) ============
 document.querySelectorAll('.todo-checkbox').forEach(checkbox => {
     checkbox.addEventListener('change', async function () {
         const item = this.closest('.task-item');
@@ -477,11 +639,9 @@ document.querySelectorAll('.todo-checkbox').forEach(checkbox => {
     });
 });
 
-// ============ OUVRIR MODAL D'ÉDITION ============
 function openEditModal(taskId, moduleId, label, deadline, assigned) {
     currentTaskId = taskId;
     currentModuleId = moduleId;
-
     document.getElementById('modal-task-label').textContent = label;
     document.getElementById('modal-deadline').value = deadline || '';
     document.getElementById('modal-assigned').value = assigned || '';
@@ -492,7 +652,6 @@ function openEditModal(taskId, moduleId, label, deadline, assigned) {
     editModalInstance.show();
 }
 
-// ============ SAUVEGARDER ============
 async function saveTask() {
     const deadline = document.getElementById('modal-deadline').value;
     const assigned = document.getElementById('modal-assigned').value;
