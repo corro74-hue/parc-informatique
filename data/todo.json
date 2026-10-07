@@ -1,6 +1,6 @@
 {
     "version": "1.0",
-    "last_update": "2026-10-06",
+    "last_update": "2026-10-07",
     "modules": [
         {
             "id": "documentation",
@@ -34,7 +34,7 @@
                 {"id": "set_test_save", "label": "Tester l'enregistrement", "done": true, "type": "test"},
                 {"id": "set_test_smtp", "label": "Tester l'envoi d'email", "done": true, "type": "test"},
                 {"id": "set_test_maintenance", "label": "Tester le mode maintenance", "done": true, "type": "test"},
-                {"id": "set_fix_password_visible", "label": "Masquer le mot de passe SMTP", "done": false, "type": "fix"}
+                {"id": "set_fix_password_visible", "label": "Masquer le mot de passe SMTP", "done": false, "type": "fix", "deadline": "2026-10-15", "assigned_to": 1}
             ]
         },
         {
@@ -70,7 +70,7 @@
                 {"id": "rep_equipment", "label": "Rapport équipements", "done": true, "type": "feature"},
                 {"id": "rep_maintenance", "label": "Rapport maintenance", "done": true, "type": "feature"},
                 {"id": "rep_test_graphs", "label": "Tester les graphiques", "done": true, "type": "test"},
-                {"id": "rep_export_pdf", "label": "Export PDF des rapports", "done": false, "type": "feature"}
+                {"id": "rep_export_pdf", "label": "Export PDF des rapports", "done": false, "type": "feature", "deadline": "2026-10-20", "assigned_to": 1}
             ]
         },
         {
@@ -114,8 +114,8 @@
             "icon": "bi-rocket",
             "color": "#84cc16",
             "tasks": [
-                {"id": "todo_fix_logo", "label": "Corriger le logo dans la sidebar", "done": false, "type": "fix"},
-                {"id": "todo_dark_mode", "label": "Mode sombre complet", "done": false, "type": "feature"},
+                {"id": "todo_fix_logo", "label": "Corriger le logo dans la sidebar", "done": false, "type": "fix", "deadline": "2026-10-08", "assigned_to": 1},
+                {"id": "todo_dark_mode", "label": "Mode sombre complet", "done": false, "type": "feature", "deadline": "2026-10-15", "assigned_to": 1},
                 {"id": "todo_email_notif", "label": "Notifications email automatiques", "done": false, "type": "feature"},
                 {"id": "todo_api_rest", "label": "API REST", "done": false, "type": "feature"},
                 {"id": "todo_export_pdf", "label": "Export PDF sur toutes les pages", "done": false, "type": "feature"},

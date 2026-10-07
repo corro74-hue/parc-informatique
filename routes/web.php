@@ -196,7 +196,7 @@ $router->post('/settings/upload-logo',        [\App\Controllers\SettingsControll
 $router->get('/todo',        [\App\Controllers\TodoController::class, 'index'],  ['permission' => 'settings.manage']);
 $router->post('/todo/toggle',[\App\Controllers\TodoController::class, 'toggle'], ['permission' => 'settings.manage']);
 $router->post('/todo/reset', [\App\Controllers\TodoController::class, 'reset'],  ['permission' => 'settings.manage']);
-
+$router->post('/todo/update-task', [\App\Controllers\TodoController::class, 'updateTask'], ['permission' => 'settings.manage']);
 // ============================================
 // CAMPAGNES D'INVENTAIRE
 // ============================================
