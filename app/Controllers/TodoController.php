@@ -161,6 +161,73 @@ final class TodoController extends Controller
     }
 
     // ============================================
+    // 🆕 EXPORT PDF
+    // ============================================
+
+    /**
+     * Génère un PDF du tableau de bord TODO.
+     */
+    public function exportPdf(Request $request): Response
+    {
+        try {
+            // Charger les données
+            $todo    = $this->computeProgress($this->loadTodo());
+            $stats   = $this->collectProjectStats();
+            $alerts  = $this->getAlerts($this->loadTodo());
+            $history = $this->getHistory(30);
+
+            // Charger les utilisateurs (pour afficher les noms dans le PDF)
+            $users = $this->loadActiveUsers();
+            $usersById = [];
+            foreach ($users as $u) {
+                $fullName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+                if ($fullName === '') $fullName = $u['username'];
+                $usersById[(int)$u['id']] = $fullName;
+            }
+
+            // Rendre la vue HTML
+            $viewPath = dirname(__DIR__, 2) . '/resources/views/todo/pdf.php';
+            if (!is_file($viewPath)) {
+                throw new \RuntimeException('Template PDF introuvable.');
+            }
+
+            $html = (function () use ($viewPath, $todo, $stats, $alerts, $history, $usersById) {
+                ob_start();
+                require $viewPath;
+                return ob_get_clean();
+            })();
+
+            // Générer le PDF avec Dompdf
+            $options = new \Dompdf\Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('defaultFont', 'DejaVu Sans');
+
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            // Envoyer le PDF au navigateur
+            $filename = 'Rapport_Projet_' . date('Y-m-d') . '.pdf';
+
+            if (ob_get_level()) ob_end_clean();
+
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: private, max-age=0, must-revalidate');
+
+            echo $dompdf->output();
+            exit;
+
+        } catch (\Throwable $e) {
+            error_log('TodoController::exportPdf erreur : ' . $e->getMessage());
+            flash('error', 'Erreur génération PDF : ' . $e->getMessage());
+            return Response::redirect(url('todo'));
+        }
+    }
+
+    // ============================================
     // 🆕 HISTORIQUE
     // ============================================
 

@@ -197,6 +197,7 @@ $router->get('/todo',        [\App\Controllers\TodoController::class, 'index'], 
 $router->post('/todo/toggle',[\App\Controllers\TodoController::class, 'toggle'], ['permission' => 'settings.manage']);
 $router->post('/todo/reset', [\App\Controllers\TodoController::class, 'reset'],  ['permission' => 'settings.manage']);
 $router->post('/todo/update-task', [\App\Controllers\TodoController::class, 'updateTask'], ['permission' => 'settings.manage']);
+$router->get('/todo/export-pdf', [\App\Controllers\TodoController::class, 'exportPdf'], ['permission' => 'settings.manage']);
 // ============================================
 // CAMPAGNES D'INVENTAIRE
 // ============================================

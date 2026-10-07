@@ -321,6 +321,12 @@
                     <i class="bi bi-x-circle"></i> Effacer filtres
                 </a>
             <?php endif; ?>
+            
+            <!-- 🆕 BOUTON EXPORT PDF -->
+            <a href="<?= url('todo/export-pdf') ?>" class="btn btn-sm btn-light" title="Exporter en PDF">
+                <i class="bi bi-file-earmark-pdf-fill text-danger"></i> Exporter PDF
+            </a>
+            
             <form method="POST" action="<?= url('todo/reset') ?>" 
                   onsubmit="return confirm('Remettre toutes les tâches à zéro ?');" class="m-0">
                 <?= csrf_field() ?>
