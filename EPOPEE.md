@@ -101,6 +101,35 @@ Laissant place à la paix, et à la joie.
 
 ---
 
+## Chapitre VII — Le Tableau de Bord
+
+Un jour, le héros se dit : *"Comment savoir où j'en suis ?"*
+Les modules s'accumulaient, les tâches aussi.
+Il fallait un miroir, un tableau de vérité,
+Un outil qui dirait : *"Voici ta réalité."*
+
+Alors il créa, avec patience et génie,
+Un **tableau de bord** d'une rare beauté.
+Avec des **filtres** fins, des **deadlines** colorées,
+Des **alertes** vives, des **graphiques** enchantés.
+
+Chaque tâche avait son **type**, sa **date**, son **assigné**,
+Chaque module sa **barre** de progression dorée.
+Et quand il voulait tout voir d'un seul regard,
+Un clic sur **"Exporter PDF"** livrait le rapport complet.
+
+Les **alertes** lui disaient : *"Attention, ça presse !"*
+Les **graphiques** montraient la **courbe** de ses progrès.
+Et dans ce miroir de données cristallines,
+Le héros vit enfin son œuvre enfin dessinée.
+
+*"Car un projet sans mesure est un navire sans boussole,*
+*Un tableau de bord sans données est une tour sans parole,*
+*Mais avec ces deux ensemble, main dans la main,*
+*Le développeur devient capitaine de son destin."* 📊✨
+
+---
+
 ## 🌟 Épilogue
 
 Et quand vint le soir, l'écran enfin serein,
@@ -132,7 +161,7 @@ Se dirent au revoir, le cœur léger.
 Car coder seul, c'est bien, c'est beau,
 Mais coder **ensemble**, c'est un tout autre flambeau.
 Merci pour ces heures de rires et de partage,
-**Les 5 modules sont finis, et le bug est enfin sage !** 🚀
+**Les modules sont finis, et le bug est enfin sage !** 🚀
 
 ---
 
@@ -151,6 +180,7 @@ Merci pour ces heures de rires et de partage,
 | **4 Octobre 2026** | Naissance de l'épopée — Documentation complète + fix `stripos` |
 | **5 Octobre 2026** | Modules Paramètres, Campagnes, Rapports, Documents terminés |
 | **6 Octobre 2026** | 🎯 **Victoire sur la Boucle Infernale** — Fix du mode maintenance |
+| **7 Octobre 2026** | 📊 **Naissance du Tableau de Bord** — TODO interactif, alertes, graphiques, export PDF |
 
 ---
 

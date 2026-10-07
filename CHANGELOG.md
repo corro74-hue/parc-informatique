@@ -7,6 +7,45 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [0.6.0] - 2026-10-07
+
+### Added
+- 📊 **Module Tableau de bord du projet** (`/todo`) :
+  - Suivi visuel de 65 tâches réparties en 7 modules
+  - Barre de progression globale + par module
+  - **Filtres** : recherche, statut (fait/à faire), type (feature/test/fix/bug/deploy), module, assigné
+  - **Deadlines** avec badges colorés (vert/orange/rouge/aujourd'hui)
+  - **Assignation** des tâches aux utilisateurs avec avatars
+  - **Modal d'édition** en direct (deadline + assignation)
+  - **Alertes automatiques** :
+    - 🚨 Tâches en retard
+    - ⏰ Tâches à faire aujourd'hui
+    - ⚠️ Tâches à échéance dans moins de 3 jours
+  - **Graphique d'évolution** sur 30 jours (Chart.js)
+  - **Historique quotidien** sauvegardé automatiquement
+  - **Export PDF** professionnel (Dompdf) :
+    - En-tête avec logo SADID
+    - Progression globale
+    - Statistiques du projet
+    - Détail complet par module
+    - Pagination automatique
+  - Statistiques du projet en temps réel :
+    - Nombre de contrôleurs, modèles, services, vues, routes
+    - Taille du projet, de l'app, du stockage
+    - Données BDD (équipements, users, documents, campagnes...)
+
+### Changed
+- Ajout du lien "Tableau du projet" dans la sidebar (Administration)
+- Refonte de la page `/todo` avec nouvelle UI moderne
+
+### Fixed
+- 🐛 **Bouton "Connexion admin"** de la page maintenance :
+  - Le bouton devient un formulaire POST vers `/logout` quand un utilisateur est connecté
+  - Résolution de la boucle infinie quand un non-admin clique sur "Connexion admin"
+  - Ajout d'un message d'avertissement indiquant qui est connecté
+
+---
+
 ## [0.5.0] - 2026-10-04
 
 ### Added
@@ -87,14 +126,18 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
-### En développement
-- 📋 Module **Campagnes d'inventaire**
-- 📊 Module **Rapports** (statistiques avancées + graphiques Chart.js)
-- 📄 Module **Documents** (GED)
-- ⚙️ Module **Paramètres** (SMTP, notifications, sécurité)
+### À venir
+- 🌙 **Mode sombre** complet sur toutes les pages
+- 🎨 **Correction du logo** dans la sidebar (fond blanc)
+- 📧 **Notifications email** automatiques (alertes deadlines)
+- 📤 **Export PDF** sur les autres modules (Rapports, Campagnes)
+- 🔐 **Masquer le mot de passe SMTP** dans la page Paramètres
+- 📱 **API REST** pour une future application mobile
+- 🧪 **Tests automatisés** (PHPUnit)
 
 ---
 
+[0.6.0]: https://github.com/corro74-hue/parc-informatique/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/corro74-hue/parc-informatique/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/corro74-hue/parc-informatique/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/corro74-hue/parc-informatique/compare/v0.2.0...v0.3.0
