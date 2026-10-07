@@ -191,6 +191,13 @@ $router->post('/settings/toggle-maintenance', [\App\Controllers\SettingsControll
 $router->post('/settings/upload-logo',        [\App\Controllers\SettingsController::class, 'uploadLogo'],        ['permission' => 'settings.manage']);
 
 // ============================================
+// TODO / TABLEAU DE BORD DU PROJET
+// ============================================
+$router->get('/todo',        [\App\Controllers\TodoController::class, 'index'],  ['permission' => 'settings.manage']);
+$router->post('/todo/toggle',[\App\Controllers\TodoController::class, 'toggle'], ['permission' => 'settings.manage']);
+$router->post('/todo/reset', [\App\Controllers\TodoController::class, 'reset'],  ['permission' => 'settings.manage']);
+
+// ============================================
 // CAMPAGNES D'INVENTAIRE
 // ============================================
 $router->get('/campaigns',                                   [\App\Controllers\InventoryCampaignController::class, 'index'],   ['permission' => 'equipment.view']);

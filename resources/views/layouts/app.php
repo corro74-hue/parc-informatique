@@ -463,6 +463,9 @@
                 <a href="<?= url('admin/database') ?>" class="<?= str_contains($uriLower, '/admin/database') ? 'active' : '' ?>">
                     <i class="bi bi-database-fill-gear"></i> Sauvegardes BDD
                 </a>
+                <a href="<?= url('todo') ?>" class="<?= str_contains($uriLower, '/todo') ? 'active' : '' ?>">
+                    <i class="bi bi-clipboard-check"></i> Tableau du projet
+                </a>
                 <a href="<?= url('settings') ?>" class="<?= str_contains($uriLower, '/settings') ? 'active' : '' ?>">
                     <i class="bi bi-gear"></i> Paramètres
                 </a>

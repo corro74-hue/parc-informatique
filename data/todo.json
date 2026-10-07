@@ -1,0 +1,127 @@
+{
+    "version": "1.0",
+    "last_update": "2026-10-06",
+    "modules": [
+        {
+            "id": "documentation",
+            "name": "Documentation",
+            "icon": "bi-file-text",
+            "color": "#667eea",
+            "tasks": [
+                {"id": "doc_readme", "label": "Créer le README.md complet", "done": true, "type": "feature"},
+                {"id": "doc_badges", "label": "Ajouter les badges (PHP, MySQL, MIT)", "done": true, "type": "feature"},
+                {"id": "doc_changelog", "label": "Créer le CHANGELOG.md", "done": true, "type": "feature"},
+                {"id": "doc_license", "label": "Ajouter le fichier LICENSE (MIT)", "done": true, "type": "feature"},
+                {"id": "doc_env", "label": "Créer le .env.example", "done": true, "type": "feature"},
+                {"id": "doc_screenshot", "label": "Ajouter une capture d'écran", "done": true, "type": "feature"},
+                {"id": "doc_epopee", "label": "Créer l'EPOPEE.md (poème)", "done": true, "type": "feature"},
+                {"id": "doc_test_links", "label": "Vérifier les liens du README", "done": true, "type": "test"},
+                {"id": "doc_test_badges", "label": "Vérifier les badges", "done": false, "type": "test"}
+            ]
+        },
+        {
+            "id": "settings",
+            "name": "Paramètres",
+            "icon": "bi-gear",
+            "color": "#10b981",
+            "tasks": [
+                {"id": "set_controller", "label": "Créer le SettingsController", "done": true, "type": "feature"},
+                {"id": "set_view", "label": "Créer la vue avec onglets", "done": true, "type": "feature"},
+                {"id": "set_system", "label": "Onglet Système", "done": true, "type": "feature"},
+                {"id": "set_smtp", "label": "Configuration SMTP (Gmail)", "done": true, "type": "feature"},
+                {"id": "set_maintenance", "label": "Mode maintenance ON/OFF", "done": true, "type": "feature"},
+                {"id": "set_logo", "label": "Upload de logo", "done": true, "type": "feature"},
+                {"id": "set_test_save", "label": "Tester l'enregistrement", "done": true, "type": "test"},
+                {"id": "set_test_smtp", "label": "Tester l'envoi d'email", "done": true, "type": "test"},
+                {"id": "set_test_maintenance", "label": "Tester le mode maintenance", "done": true, "type": "test"},
+                {"id": "set_fix_password_visible", "label": "Masquer le mot de passe SMTP", "done": false, "type": "fix"}
+            ]
+        },
+        {
+            "id": "campaigns",
+            "name": "Campagnes d'inventaire",
+            "icon": "bi-clipboard-check",
+            "color": "#f59e0b",
+            "tasks": [
+                {"id": "camp_controller", "label": "Créer le contrôleur", "done": true, "type": "feature"},
+                {"id": "camp_list", "label": "Liste des campagnes", "done": true, "type": "feature"},
+                {"id": "camp_create", "label": "Création d'une campagne", "done": true, "type": "feature"},
+                {"id": "camp_show", "label": "Détail avec pointage", "done": true, "type": "feature"},
+                {"id": "camp_point", "label": "Boutons Trouvé/Manquant/Déplacé", "done": true, "type": "feature"},
+                {"id": "camp_stats", "label": "Statistiques en direct", "done": true, "type": "feature"},
+                {"id": "camp_test_create", "label": "Tester la création", "done": true, "type": "test"},
+                {"id": "camp_test_point", "label": "Tester le pointage", "done": true, "type": "test"},
+                {"id": "camp_test_complete", "label": "Tester la clôture", "done": true, "type": "test"}
+            ]
+        },
+        {
+            "id": "reports",
+            "name": "Rapports",
+            "icon": "bi-bar-chart",
+            "color": "#8b5cf6",
+            "tasks": [
+                {"id": "rep_controller", "label": "Créer le ReportController", "done": true, "type": "feature"},
+                {"id": "rep_dashboard", "label": "Dashboard avec Chart.js", "done": true, "type": "feature"},
+                {"id": "rep_pie_category", "label": "Camembert par catégorie", "done": true, "type": "feature"},
+                {"id": "rep_pie_status", "label": "Camembert par statut", "done": true, "type": "feature"},
+                {"id": "rep_pie_brand", "label": "Camembert par marque", "done": true, "type": "feature"},
+                {"id": "rep_bar_service", "label": "Barres par service", "done": true, "type": "feature"},
+                {"id": "rep_line_evolution", "label": "Courbe d'évolution", "done": true, "type": "feature"},
+                {"id": "rep_equipment", "label": "Rapport équipements", "done": true, "type": "feature"},
+                {"id": "rep_maintenance", "label": "Rapport maintenance", "done": true, "type": "feature"},
+                {"id": "rep_test_graphs", "label": "Tester les graphiques", "done": true, "type": "test"},
+                {"id": "rep_export_pdf", "label": "Export PDF des rapports", "done": false, "type": "feature"}
+            ]
+        },
+        {
+            "id": "documents",
+            "name": "Documents (GED)",
+            "icon": "bi-file-earmark-text",
+            "color": "#06b6d4",
+            "tasks": [
+                {"id": "doc_model", "label": "Modèle Document", "done": true, "type": "feature"},
+                {"id": "doc_version_model", "label": "Modèle DocumentVersion", "done": true, "type": "feature"},
+                {"id": "doc_controller", "label": "Contrôleur CRUD", "done": true, "type": "feature"},
+                {"id": "doc_upload", "label": "Upload de fichiers", "done": true, "type": "feature"},
+                {"id": "doc_versioning", "label": "Versioning", "done": true, "type": "feature"},
+                {"id": "doc_download", "label": "Téléchargement", "done": true, "type": "feature"},
+                {"id": "doc_preview", "label": "Prévisualisation", "done": true, "type": "feature"},
+                {"id": "doc_sign", "label": "Signature électronique", "done": true, "type": "feature"},
+                {"id": "doc_bulk", "label": "Actions groupées (bulk)", "done": true, "type": "feature"},
+                {"id": "doc_test_upload", "label": "Tester l'upload", "done": true, "type": "test"},
+                {"id": "doc_test_version", "label": "Tester le versioning", "done": true, "type": "test"},
+                {"id": "doc_test_bulk", "label": "Tester les bulk actions", "done": true, "type": "test"},
+                {"id": "doc_export_zip", "label": "Export ZIP des documents", "done": false, "type": "feature"}
+            ]
+        },
+        {
+            "id": "bugs",
+            "name": "Bugs résolus",
+            "icon": "bi-bug",
+            "color": "#ef4444",
+            "tasks": [
+                {"id": "bug_casse", "label": "Bug de casse parc-informatique", "done": true, "type": "bug"},
+                {"id": "bug_stripos", "label": "Fix stripos dans Request.php", "done": true, "type": "bug"},
+                {"id": "bug_accents", "label": "Accents cassés dans settings", "done": true, "type": "bug"},
+                {"id": "bug_columns", "label": "Colonnes SQL inexistantes", "done": true, "type": "bug"},
+                {"id": "bug_boucle", "label": "Boucle infernale du mode maintenance", "done": true, "type": "bug"},
+                {"id": "bug_doublon", "label": "Doublon de dossier parc-informatique", "done": true, "type": "bug"}
+            ]
+        },
+        {
+            "id": "backlog",
+            "name": "À venir (backlog)",
+            "icon": "bi-rocket",
+            "color": "#84cc16",
+            "tasks": [
+                {"id": "todo_fix_logo", "label": "Corriger le logo dans la sidebar", "done": false, "type": "fix"},
+                {"id": "todo_dark_mode", "label": "Mode sombre complet", "done": false, "type": "feature"},
+                {"id": "todo_email_notif", "label": "Notifications email automatiques", "done": false, "type": "feature"},
+                {"id": "todo_api_rest", "label": "API REST", "done": false, "type": "feature"},
+                {"id": "todo_export_pdf", "label": "Export PDF sur toutes les pages", "done": false, "type": "feature"},
+                {"id": "todo_tests_phpunit", "label": "Tests automatisés (PHPUnit)", "done": false, "type": "test"},
+                {"id": "todo_deploy", "label": "Déploiement en production", "done": false, "type": "deploy"}
+            ]
+        }
+    ]
+}
